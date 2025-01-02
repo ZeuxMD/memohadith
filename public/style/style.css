@@ -1,0 +1,77 @@
+:root{
+}
+
+body{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    height: calc(100svh - 200px);
+}
+
+#hadith{
+    max-width: 50%;
+    text-align: center;
+}
+
+.list{
+    position: fixed; 
+    right: -300px;    
+    top: 0;
+    width: 200px;
+    height: 100vh;
+    overflow-y: auto;
+    padding-left: 10px;
+    padding-right: 3px;
+    transition: 0.3s;
+    z-index: 1000;
+    transition: all ease-int 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px blue;
+    background: lightseagreen;
+}
+
+.list > h2{
+    position: absolute;
+    top: 10px;
+}
+
+ul {
+    list-style-type:none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    border: 1px;
+}
+
+.list.active{
+    right: 0;
+}
+
+.list-item{
+    cursor: pointer;
+    border-radius: 3px;
+}
+.list-item:hover{
+    color: darkblue;
+}
+.list-item:hover::after{
+    content: "»";
+    position: absolute;
+    left: 5px;
+}
+
+
+
+
+
+
+
+
+
