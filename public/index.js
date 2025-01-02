@@ -9,12 +9,15 @@ const listItems = document.querySelector(".list-items")
 const userData = JSON.parse(localStorage.getItem('userData'));
 const hadithTitles = getHadithTitles();
 
-let currentHadith = 0;
-let visits = 0;
+let currentHadith;
+let visits;
 
 if(userData) {
     visits = userData.visits + 1;
     currentHadith = userData.currentHadith;
+} else {
+    visits = 0;
+    currentHadith = 0;
 }
 
 displayHadith();
@@ -33,6 +36,19 @@ function nextHadith() {
     //TODO: add congratulations message if you finished a series of hadiths
     if(currentHadith == hadith.length) currentHadith = 0;
     displayHadith();
+
+    localStorage.setItem('userData', JSON.stringify({
+        currentHadith: currentHadith,
+        visits: visits,
+    }));
+}
+
+function setHadith(newValue){
+    currentHadith = newValue;
+    localStorage.setItem('userData', JSON.stringify({
+        currentHadith: newValue,
+        visits: visits,
+    }));
 }
 
 function getHadithTitles(){
@@ -58,7 +74,7 @@ document.addEventListener('keydown', function(e){
 list.addEventListener('click' , function(e) {
     const target = e.target;
     if(target) {
-        currentHadith = target.dataset.index;
+        setHadith(target.dataset.index);
         displayHadith();
     }
 })
@@ -73,7 +89,7 @@ for(const [i, title] of hadithTitles.entries()){
 
 localStorage.setItem('userData', JSON.stringify({
     currentHadith: currentHadith,
-    visits: 0,
+    visits: visits,
 }));
 
 console.log(userData, visits);
