@@ -5,6 +5,8 @@ const memorizedBtn = document.querySelector(".memorized-btn")
 const listBtn = document.querySelector(".list-btn")
 const list = document.querySelector(".list")
 const listItems = document.querySelector(".list-items")
+const testBtn = document.querySelector(".test-btn");
+const testWindow = document.querySelector('.test-window');
 
 const userData = JSON.parse(localStorage.getItem('userData'));
 const hadithTitles = getHadithTitles();
@@ -21,6 +23,8 @@ if(userData) {
 }
 
 displayHadith();
+
+// ------------ functions ----------------
 
 function displayHadith(){
     hadithDisplay.textContent = hadith[currentHadith];
@@ -44,9 +48,10 @@ function nextHadith() {
 }
 
 function setHadith(newValue){
-    currentHadith = newValue;
+    console.log(typeof parseInt(newValue));
+    currentHadith = parseInt(newValue);
     localStorage.setItem('userData', JSON.stringify({
-        currentHadith: newValue,
+        currentHadith: currentHadith,
         visits: visits,
     }));
 }
@@ -61,6 +66,7 @@ function getHadithTitles(){
     return titles;
 }
 
+// ------------ Event listeners ----------------
 memorizedBtn.addEventListener('click', function(){
     nextHadith();
 })
@@ -78,7 +84,11 @@ list.addEventListener('click' , function(e) {
         displayHadith();
     }
 })
+testBtn.addEventListener('click', function(){
+    testWindow.classList.toggle('active');
+})
 
+// ------------ Standalone code ----------------
 for(const [i, title] of hadithTitles.entries()){
     const newItem = document.createElement('li');
     newItem.className = 'list-item';

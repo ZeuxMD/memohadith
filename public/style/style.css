@@ -6,8 +6,24 @@ body{
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 20px;
     height: 100vh;
-    height: calc(100svh - 200px);
+    height: 100svh;
+    background-image: url(../images/2.jpg);
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    color: white;
+}
+.overlay{
+    position: absolute;
+    inset: 0;
+    background-color: black;
+    opacity: 0.8;
+    z-index: -1;
+}
+
+h1{
+    margin: 0;
 }
 
 #hadith{
@@ -67,7 +83,19 @@ ul {
     left: 5px;
 }
 
-
+.test-window{
+    position: absolute;
+    display: none;
+    width: 600px;
+    height: 500px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.test-window.active{
+    display: block;
+    
+}
 
 
 
