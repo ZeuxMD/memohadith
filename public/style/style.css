@@ -91,12 +91,17 @@ ul {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    z-index: 100;
+    background-color: wheat;
+    color: black;
 }
 .test-window.active{
     display: block;
     
 }
-
+.close-test{
+    cursor: pointer;
+}
 
 
 
