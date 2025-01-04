@@ -27,7 +27,8 @@ h1{
 }
 
 #hadith{
-    max-width: 50%;
+    max-width: 500px;
+    min-width: 300px;
     text-align: center;
 }
 
