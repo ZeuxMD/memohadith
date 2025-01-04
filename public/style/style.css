@@ -94,13 +94,25 @@ ul {
     z-index: 100;
     background-color: wheat;
     color: black;
+    border-radius: 5px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
 }
 .test-window.active{
-    display: block;
+    display: flex;
     
+}
+.question-container{
+    width: 80%;
+    text-align: center;
 }
 .close-test{
     cursor: pointer;
+    position: absolute;
+    top: 5px;
+    right: 5px;
 }
 
 

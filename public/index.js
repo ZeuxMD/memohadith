@@ -16,6 +16,8 @@ const hadithTitles = getHadithTitles();
 let currentHadith;
 let visits;
 let randTest;
+let narrators;
+let extractors;
 
 if (userData) {
     visits = userData.visits + 1;
@@ -69,6 +71,24 @@ function getHadithTitles() {
     return titles;
 }
 
+function getNarrators(){
+    const narrators = new Array(hadith.length);
+    for(const [i, h] of hadith.entries()){
+        const end = h.indexOf(" رضي");
+        narrators[i] = h.slice(0, end); 
+    }
+}
+narrators = getNarrators();
+
+function getExtractors(){
+    const extractors = new Array(hadith.length);
+    for(const [i, h] of hadith.entries()){
+        const start = h.indexOf("» ");
+        extractors[i] = h.slice(start + 1, -1);
+    }
+}
+extractors = getExtractors();
+
 function getRandomizedTest() {
     const memorizedHadith = hadith.slice(0, currentHadith);
     const randomizedTest = new Array(memorizedHadith.length);
@@ -87,12 +107,23 @@ function getRandomizedTest() {
 memorizedBtn.addEventListener('click', function() {
     nextHadith();
 })
-listBtn.addEventListener('click', function() {
+
+const handleClickOutsideList = function (e) {
+    if (!list.contains(e.target)) {
+        list.classList.remove('active');
+        document.removeEventListener('click', handleClickOutsideList);
+    }
+};
+
+listBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
     list.classList.toggle('active');
+    document.addEventListener('click', handleClickOutsideList);
 })
 // open Hadith list on pressing space bar
 document.addEventListener('keydown', function(e) {
     if (e.code == "Space") list.classList.toggle('active');
+    document.addEventListener('click', handleClickOutsideList);
 })
 list.addEventListener('click', function(e) {
     const target = e.target;
@@ -101,13 +132,25 @@ list.addEventListener('click', function(e) {
         displayHadith();
     }
 })
-testBtn.addEventListener('click', function() {
+testBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+
     testWindow.classList.add('active');
     randTest = getRandomizedTest();
-    questionContainer.textContent = randTest[0];
+    questionContainer.textContent = randTest[0] || "احفظ أولاً ثم اختبر :)";
+    const handleClickOutside = function (e) {
+        if (!testWindow.contains(e.target)) {
+            testWindow.classList.remove('active');
+            randTest = null;
+            document.removeEventListener('click', handleClickOutside);
+        }
+    };
+
+    document.addEventListener('click', handleClickOutside);
 })
 closeTest.addEventListener('click', function() {
     testWindow.classList.remove('active');
+    randTest = null;
 })
 
 // ------------ Standalone code ----------------
