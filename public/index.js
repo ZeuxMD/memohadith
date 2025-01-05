@@ -10,6 +10,9 @@ const testWindow = document.querySelector('.test-window');
 const closeTest = document.querySelector('.close-test');
 const questionContainer = document.querySelector('.question-container');
 const checkAns = document.querySelector('.check-ans');
+const answerContainer = document.querySelector('.ans-container');
+const questionHeadEl = document.querySelector('.question-head');
+const answerInput = document.querySelector('.answer-input');
 
 const userData = JSON.parse(localStorage.getItem('userData'));
 const hadithTitles = getHadithTitles();
@@ -76,28 +79,39 @@ function getHadithTitles() {
 function getNarrators(hadithArr) {
     let hadith = hadiths;
     if (arguments.length > 0) hadith = hadithArr;
-    const narrators = new Array(hadith.length);
-    for (const [i, h] of hadith.entries()) {
-        narrators[i] = getNarrator(h)[0];
+    const narrators = [];
+    for (const h of hadith) {
+        const narrator = getNarrator(h)[0];
+        if(narrators.includes(narrator)) continue;
+        narrators.push(narrator);
     }
     return narrators;
 }
 function getNarrator(hadith) {
-    const end = hadith.indexOf(" رضي");
+    const end = hadith.indexOf("رضي ");
     return [hadith.slice(0, end), end];
 }
 narrators = getNarrators();
 
 function getExtractors() {
-    const extractors = new Array(hadiths.length);
-    for (const [i, h] of hadiths.entries()) {
-        extractors[i] = getExtractor(h)[0];
+    const extractors = [];
+    for (const h of hadiths) {
+        const extractor = getExtractor(h)[0];
+        if (extractors.includes(extractor)) continue;
+        extractors.push(extractor);
     }
     return extractors;
 }
 function getExtractor(hadith) {
     const start = hadith.indexOf("» ");
-    return [hadith.slice(start + 1, -1), start];
+    let end = -1;
+    for (let i = start + 1; i < hadith.length; i++) {
+        if (hadith.charAt(i) == '.') {
+            end = i;
+            break;
+        }
+    }
+    return [hadith.slice(start + 1, end), start];
 }
 extractors = getExtractors();
 
@@ -118,6 +132,10 @@ function getRandomizedTest(testLength) {
 
 function nextQuestion() {
     currentQuestion++;
+    if(currentQuestion == randTest.length){
+        currentQuestion = 0;
+
+    }
     getQuestion(randTest[currentQuestion]);
 }
 // TODO: add dificulty levels
@@ -125,18 +143,22 @@ function getQuestion(question) {
     // 0, 1: narrator question, 2, 3: extractor question, 4: complete Hadith 
     // this is done to reduce the chance of getting a 'complete Hadith' question
     if (typeof question != "string") return;
-    const questionType = 4;
-    console.log(questionType);
+    let questionHead;
+    const questionType = Math.floor(Math.random() * 5);
     switch (questionType) {
         case 0:
         case 1:
             const [narrator, startFrom] = getNarrator(question);
             questionContainer.textContent = "***" + question.slice(startFrom);
+            questionHead = "من راوي الحديث؟";
+            displayMCQ(narrator, narrators);
             break;
         case 2:
         case 3:
             const [extractor, deleteFrom] = getExtractor(question);
             questionContainer.textContent = question.slice(0, deleteFrom + 1) + " ***";
+            questionHead = "من مخرِّج الحديث؟";
+            displayMCQ(extractor, extractors);
             break;
         case 4:
             const hadithStart = question.indexOf("«");
@@ -144,11 +166,55 @@ function getQuestion(question) {
             const hadithText = question.substring(hadithStart, hadithEnd).split(" ");
             const cutLength = Math.ceil(Math.random() * 5);
             const cutFrom = Math.floor(Math.random() * hadithText.length - 1);
-            const deleted = hadithText.splice(cutFrom, cutLength, "****").join(" ");
+            const ans = hadithText.splice(cutFrom, cutLength, "****").join(" ");
             question = question.slice(0, hadithStart) + hadithText.join(" ") + question.slice(hadithEnd, -1);
             questionContainer.textContent = question;
+            questionHead = "أكمل الحديث";
+            const ansInput = document.createElement('input');
+            ansInput.type = "text";
+            ansInput.className = "text-ans";
+            answerInput.replaceChildren(ansInput);
             break;
     }
+    questionHeadEl.textContent = questionHead;
+    const questionInput = document.createElement('input');
+
+}
+// 2 approaches, 1: build UI elements programmatically, 2: build them in the HTML and edit them from here, displaying/hiding them as needed (prefered)
+function displayMCQ(ans, answersArr) {
+    const answers = createMultipleChoice(ans, answersArr);
+    const msqList = document.createElement('ul');
+    msqList.className = "msq-list";
+    for(const a of answers){
+        const msq = document.createElement('li');
+        const choiceLabel = document.createElement('label');
+        const choice = document.createElement('input');
+        choice.type = "radio";
+        choice.name = "answer";
+        choice.value = a; 
+        choiceLabel.textContent = " " +a;
+        msq.className = "msq-item";
+        msq.appendChild(choice);
+        msq.appendChild(choiceLabel);
+        msqList.appendChild(msq);
+    }
+    answerInput.replaceChildren(msqList);
+}
+
+function createMultipleChoice(realAns, answersArr) {
+    const answersLength = Math.min(answersArr.length, 4);
+    const answers = new Array(answersLength);
+    let randPos = Math.floor(Math.random() * answersLength);
+    answers[randPos] = realAns;
+    let randAns = answersArr[Math.floor(Math.random() * answersArr.length)];
+    for (let i = 0; i < answersLength - 1; i++) {
+        while (answers[randPos])
+            randPos = Math.floor(Math.random() * answersLength);
+        while (answers.includes(randAns))
+            randAns = answersArr[Math.floor(Math.random() * answersArr.length)];
+        answers[randPos] = randAns;
+    }
+    return answers;
 }
 
 // ------------ Event listeners ----------------
@@ -186,7 +252,11 @@ testBtn.addEventListener('click', function(e) {
     testWindow.classList.add('active');
     randTest = getRandomizedTest(currentHadith);
     currentQuestion = 0;
-    getQuestion(randTest[0] || "احفظ أولاً ثم اختبر :)");
+    if (randTest[0])
+        getQuestion(randTest[0], 0);
+    else {
+        questionContainer.textContent = "احفظ أولاً ثم اختبر :)";
+    }
     const handleClickOutside = function(e) {
         if (!testWindow.contains(e.target)) {
             testWindow.classList.remove('active');
@@ -197,7 +267,7 @@ testBtn.addEventListener('click', function(e) {
 
     document.addEventListener('click', handleClickOutside);
 })
-checkAns.addEventListener('click', function(e) {
+checkAns.addEventListener('click', function() {
     nextQuestion();
 });
 closeTest.addEventListener('click', function() {
