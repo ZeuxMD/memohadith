@@ -23,6 +23,8 @@ let randTest;
 let narrators;
 let extractors;
 let currentQuestion;
+let testScore = 0;
+let currAns;
 
 if (userData) {
     visits = userData.visits + 1;
@@ -131,12 +133,27 @@ function getRandomizedTest(testLength) {
 }
 
 function nextQuestion() {
+    checkAnswer();
     currentQuestion++;
-    if(currentQuestion == randTest.length){
+    checkAns.textContent = "السؤال التالي";
+    if(currentQuestion == randTest.length - 1){
+        checkAns.textContent = "انهي الاختبار";
+    } else if(currentQuestion == randTest.length) {
         currentQuestion = 0;
-
+        console.log(testScore);
     }
-    getQuestion(randTest[currentQuestion]);
+    currAns = getQuestion(randTest[currentQuestion]);
+}
+function checkAnswer(){
+    const textInput = answerInput.querySelector('input[type="text"]');
+    if(textInput){
+        if(textInput.textContent == currAns) testScore++;
+    } else {
+        const checked = answerInput.querySelector('input[name="answer"]:checked').value;
+        if(checked === currAns){
+            testScore++;
+        }
+    }
 }
 // TODO: add dificulty levels
 function getQuestion(question) {
@@ -144,6 +161,7 @@ function getQuestion(question) {
     // this is done to reduce the chance of getting a 'complete Hadith' question
     if (typeof question != "string") return;
     let questionHead;
+    let ans;
     const questionType = Math.floor(Math.random() * 5);
     switch (questionType) {
         case 0:
@@ -151,6 +169,7 @@ function getQuestion(question) {
             const [narrator, startFrom] = getNarrator(question);
             questionContainer.textContent = "***" + question.slice(startFrom);
             questionHead = "من راوي الحديث؟";
+            ans = narrator;
             displayMCQ(narrator, narrators);
             break;
         case 2:
@@ -158,6 +177,7 @@ function getQuestion(question) {
             const [extractor, deleteFrom] = getExtractor(question);
             questionContainer.textContent = question.slice(0, deleteFrom + 1) + " ***";
             questionHead = "من مخرِّج الحديث؟";
+            ans = extractor;
             displayMCQ(extractor, extractors);
             break;
         case 4:
@@ -166,7 +186,7 @@ function getQuestion(question) {
             const hadithText = question.substring(hadithStart, hadithEnd).split(" ");
             const cutLength = Math.ceil(Math.random() * 5);
             const cutFrom = Math.floor(Math.random() * hadithText.length - 1);
-            const ans = hadithText.splice(cutFrom, cutLength, "****").join(" ");
+            ans = hadithText.splice(cutFrom, cutLength, "****").join(" ");
             question = question.slice(0, hadithStart) + hadithText.join(" ") + question.slice(hadithEnd, -1);
             questionContainer.textContent = question;
             questionHead = "أكمل الحديث";
@@ -177,8 +197,8 @@ function getQuestion(question) {
             break;
     }
     questionHeadEl.textContent = questionHead;
-    const questionInput = document.createElement('input');
-
+    console.log(ans);
+    return ans;
 }
 // 2 approaches, 1: build UI elements programmatically, 2: build them in the HTML and edit them from here, displaying/hiding them as needed (prefered)
 function displayMCQ(ans, answersArr) {
@@ -226,7 +246,7 @@ const handleClickOutsideList = function(e) {
     if (!list.contains(e.target)) {
         list.classList.remove('active');
         document.removeEventListener('click', handleClickOutsideList);
-    }
+    } 
 };
 
 listBtn.addEventListener('click', function(e) {
@@ -252,10 +272,15 @@ testBtn.addEventListener('click', function(e) {
     testWindow.classList.add('active');
     randTest = getRandomizedTest(currentHadith);
     currentQuestion = 0;
-    if (randTest[0])
-        getQuestion(randTest[0], 0);
+    if (randTest.length > 1){
+        currAns = getQuestion(randTest[0]);
+        testScore = 0;
+        currentQuestion = 0;
+        checkAns.style.visibility = "visible";
+    }
     else {
-        questionContainer.textContent = "احفظ أولاً ثم اختبر :)";
+        questionContainer.textContent = "احفظ حديثين على الأقل ثم اختبر :)";
+        checkAns.style.visibility = "hidden";
     }
     const handleClickOutside = function(e) {
         if (!testWindow.contains(e.target)) {
