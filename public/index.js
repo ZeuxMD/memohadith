@@ -1,7 +1,8 @@
-//import { hadiths } from "./data.js";
-
-const bukhariUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-bukhari.json";
-const nawawiUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-nawawi.json";
+//TODO: add english translations
+const urls = {
+    bukhari: "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-bukhari.json",
+    nawawi: "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-nawawi.json",
+}
 
 const hadithDisplay = document.getElementById("hadith")
 const memorizedBtn = document.querySelector(".memorized-btn")
@@ -16,9 +17,10 @@ const checkAns = document.querySelector('.check-ans');
 const answerContainer = document.querySelector('.ans-container');
 const questionHeadEl = document.querySelector('.question-head');
 const answerInput = document.querySelector('.answer-input');
+const toggleTashkilBtn = document.getElementById('toggleTashkil');
 
 const userData = JSON.parse(localStorage.getItem('userData'));
-const hadiths = extractHadithFromData(await getDatafromAPI(nawawiUrl));
+const [hadiths, hadithsNoTashkil] = extractHadithFromData(await getDatafromAPI(urls.nawawi));
 const hadithTitles = getHadithTitles();
 
 let currentHadith;
@@ -45,16 +47,18 @@ displayHadith();
 
 function extractHadithFromData(hadithData){
     const hadithsArr = [];
+    const hadithsNoTashkil = [];
     for(const h of hadithData){
         hadithsArr.push(h.text);
+        hadithsNoTashkil.push(removeTashkeel(h.text));
     }
-    return hadithsArr;
+    return [hadithsArr, hadithsNoTashkil];
 }
 
 async function getDatafromAPI(url){
     let hadithData;
 
-    await fetch(url)
+    await fetch(url, {})
       .then(response => {
         if (!response.ok) {
           throw new Error(`Failed to fetch data. Status code: ${response.status}`);
@@ -71,8 +75,14 @@ async function getDatafromAPI(url){
     return hadithData;
 }
 
+function removeTashkeel(text) {
+    const tashkeelRegex = /[\u0617-\u061A\u064B-\u0652]/g;
+    return text.replace(tashkeelRegex, '');
+}
+
 function displayHadith() {
-    hadithDisplay.textContent = hadiths[currentHadith];
+    const hadithsToDisplay = toggleTashkilBtn.checked ? hadithsNoTashkil : hadiths;
+    hadithDisplay.textContent = hadithsToDisplay[currentHadith];
 }
 
 function pickHadith() {
@@ -333,6 +343,10 @@ closeTest.addEventListener('click', function() {
     randTest = null;
 })
 
+toggleTashkilBtn.addEventListener("change", function(){
+    displayHadith();
+})
+
 // ------------ Standalone code ----------------
 for (const [i, title] of hadithTitles.entries()) {
     const newItem = document.createElement('li');
@@ -348,4 +362,4 @@ localStorage.setItem('userData', JSON.stringify({
 }));
 
 
-console.log(userData, visits);
+//console.log(userData, visits);
