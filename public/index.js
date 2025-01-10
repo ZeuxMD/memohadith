@@ -1,4 +1,7 @@
-import { hadiths } from "./data.js";
+//import { hadiths } from "./data.js";
+
+const bukhariUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-bukhari.json";
+const nawawiUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-nawawi.json";
 
 const hadithDisplay = document.getElementById("hadith")
 const memorizedBtn = document.querySelector(".memorized-btn")
@@ -15,6 +18,7 @@ const questionHeadEl = document.querySelector('.question-head');
 const answerInput = document.querySelector('.answer-input');
 
 const userData = JSON.parse(localStorage.getItem('userData'));
+const hadiths = extractHadithFromData(await getDatafromAPI(nawawiUrl));
 const hadithTitles = getHadithTitles();
 
 let currentHadith;
@@ -37,6 +41,35 @@ if (userData) {
 displayHadith();
 
 // ------------ functions ----------------
+
+
+function extractHadithFromData(hadithData){
+    const hadithsArr = [];
+    for(const h of hadithData){
+        hadithsArr.push(h.text);
+    }
+    return hadithsArr;
+}
+
+async function getDatafromAPI(url){
+    let hadithData;
+
+    await fetch(url)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Failed to fetch data. Status code: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        hadithData = data.hadiths; // Access the hadiths array
+      })
+      .catch(error => {
+        console.error("Error fetching data:", error);
+      });
+
+    return hadithData;
+}
 
 function displayHadith() {
     hadithDisplay.textContent = hadiths[currentHadith];
@@ -313,5 +346,6 @@ localStorage.setItem('userData', JSON.stringify({
     currentHadith: currentHadith,
     visits: visits,
 }));
+
 
 console.log(userData, visits);
