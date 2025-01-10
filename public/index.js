@@ -1,8 +1,34 @@
 //TODO: add english translations
-const urls = {
-    bukhari: "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-bukhari.json",
-    nawawi: "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-nawawi.json",
+const urls = {}
+const engUrls = {}
+const hadithCollectionUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions.json";
+const hadithCollectionData = await getDatafromAPI(hadithCollectionUrl);
+const arBookNames = new Map();
+arBookNames.set("abudawud", "سنن أبي داوود")
+arBookNames.set("bukhari", "صحيح البخاري")
+arBookNames.set("ibnmajah", "سنن ابن ماجة")
+arBookNames.set("malik", "موطأ مالك")
+arBookNames.set("muslim", "صحيح مسلم")
+arBookNames.set("nasai", "سنن النسائي")
+arBookNames.set("nawawi", "الأربعون النووية")
+arBookNames.set("tirmidhi", "جامع الترمذي")
+const bookOptions = document.querySelector('.book-options');
+
+for(let key in hadithCollectionData){
+    const collection = hadithCollectionData[key].collection;
+    urls[key] = collection[0].link;
+    for(const c of collection){
+        if(c.language === "English") engUrls[key] = c.link;
+    }
+    if(!arBookNames.get(key)) continue;
+    const option = document.createElement("option");
+    option.value = key;
+    option.text = arBookNames.get(key);
+    bookOptions.appendChild(option);
 }
+// make nawawi first choice in the list
+bookOptions.insertBefore(bookOptions.removeChild(bookOptions.querySelector("[value='nawawi']")), bookOptions.firstElementChild);
+bookOptions.querySelector("[value='nawawi']").selected = true;
 
 const hadithDisplay = document.getElementById("hadith")
 const memorizedBtn = document.querySelector(".memorized-btn")
@@ -19,9 +45,9 @@ const questionHeadEl = document.querySelector('.question-head');
 const answerInput = document.querySelector('.answer-input');
 const toggleTashkilBtn = document.getElementById('toggleTashkil');
 
-const userData = JSON.parse(localStorage.getItem('userData'));
-const [hadiths, hadithsNoTashkil] = extractHadithFromData(await getDatafromAPI(urls.nawawi));
-const hadithTitles = getHadithTitles();
+let userData = JSON.parse(localStorage.getItem('userData'));
+let currentBook = "nawawi";
+let state = {hadiths: null, hadithsNoTashkil: null, hadithTitles: null};
 
 let currentHadith;
 let visits;
@@ -32,20 +58,27 @@ let currentQuestion;
 let testScore = 0;
 let currAns;
 
-if (userData) {
-    visits = userData.visits + 1;
-    currentHadith = userData.currentHadith;
-} else {
-    visits = 0;
-    currentHadith = 0;
-}
+visits = userData?.visits + 1 || 0;
+currentHadith = userData?.currentHadith || 0;
+currentBook = userData?.currentBook || "nawawi";
 
-displayHadith();
-
+await updateHadiths(currentBook, state);
 // ------------ functions ----------------
 
+async function updateHadiths(currentBook, state){
+    const result = await getHadithArrays(currentBook);
+    state.hadiths = result[0];
+    state.hadithsNoTashkil = result[1];
+    displayHadithTitles(); 
+    displayHadith();
+}
 
-function extractHadithFromData(hadithData){
+async function getHadithArrays(currentBook){
+    return extractHadithFromData(await getDatafromAPI(urls[currentBook]));
+}
+
+function extractHadithFromData(data){
+    const hadithData = data?.hadiths;
     const hadithsArr = [];
     const hadithsNoTashkil = [];
     for(const h of hadithData){
@@ -56,23 +89,25 @@ function extractHadithFromData(hadithData){
 }
 
 async function getDatafromAPI(url){
-    let hadithData;
-
-    await fetch(url, {})
+    let data;
+    await fetch(url)
       .then(response => {
         if (!response.ok) {
           throw new Error(`Failed to fetch data. Status code: ${response.status}`);
         }
         return response.json();
       })
-      .then(data => {
-        hadithData = data.hadiths; // Access the hadiths array
+      .then(d => {
+          data = d;
       })
       .catch(error => {
         console.error("Error fetching data:", error);
       });
+    return data;
+}
 
-    return hadithData;
+function getArabicName(engName){
+    return arBookNames.get(engName);
 }
 
 function removeTashkeel(text) {
@@ -81,19 +116,19 @@ function removeTashkeel(text) {
 }
 
 function displayHadith() {
-    const hadithsToDisplay = toggleTashkilBtn.checked ? hadithsNoTashkil : hadiths;
+    const hadithsToDisplay = toggleTashkilBtn.checked ? state.hadithsNoTashkil : state.hadiths;
     hadithDisplay.textContent = hadithsToDisplay[currentHadith];
 }
 
 function pickHadith() {
-    const rnd = Math.floor(Math.random() * hadiths.length);
-    return hadiths[rnd];
+    const rnd = Math.floor(Math.random() * state.hadiths.length);
+    return state.hadiths[rnd];
 }
 
 function nextHadith() {
     currentHadith++;
     //TODO: add congratulations message if you finished a series of hadiths
-    if (currentHadith == hadiths.length) currentHadith = 0;
+    if (currentHadith == state.hadiths.length) currentHadith = 0;
     displayHadith();
 
     localStorage.setItem('userData', JSON.stringify({
@@ -103,7 +138,6 @@ function nextHadith() {
 }
 
 function setHadith(newValue) {
-    console.log(typeof parseInt(newValue));
     currentHadith = parseInt(newValue);
     localStorage.setItem('userData', JSON.stringify({
         currentHadith: currentHadith,
@@ -111,18 +145,22 @@ function setHadith(newValue) {
     }));
 }
 
-function getHadithTitles() {
+function displayHadithTitles() {
     const titles = [];
-    for (const h of hadiths) {
-        const start = h.indexOf("«");
+    for (const [i, h] of state.hadithsNoTashkil.entries()) {
+        let start = h.indexOf(":");
         const title = h.slice(start + 1, start + 30).split(" ").splice(0, 4).join(" ");
-        titles.push(title);
+        const newTitle = document.createElement('li');
+        newTitle.className = 'list-item';
+        newTitle.innerText = (i + 1) + ". " + title + "...";
+        newTitle.dataset.index = i;
+        titles.push(newTitle);
     }
-    return titles;
+    listItems.replaceChildren(...titles);
 }
 
 function getNarrators(hadithArr) {
-    let hadith = hadiths;
+    let hadith = state.hadiths;
     if (arguments.length > 0) hadith = hadithArr;
     const narrators = [];
     for (const h of hadith) {
@@ -140,7 +178,7 @@ narrators = getNarrators();
 
 function getExtractors() {
     const extractors = [];
-    for (const h of hadiths) {
+    for (const h of state.hadiths) {
         const extractor = getExtractor(h)[0];
         if (extractors.includes(extractor)) continue;
         extractors.push(extractor);
@@ -161,7 +199,7 @@ function getExtractor(hadith) {
 extractors = getExtractors();
 
 function getRandomizedTest(testLength) {
-    const memorizedHadith = hadiths.slice(0, testLength)
+    const memorizedHadith = state.hadiths.slice(0, testLength)
     const randomizedTest = new Array(memorizedHadith.length);
 
     for (let i = 0; i < randomizedTest.length; i++) {
@@ -298,10 +336,10 @@ listBtn.addEventListener('click', function(e) {
     document.addEventListener('click', handleClickOutsideList);
 })
 // open Hadith list on pressing space bar
-document.addEventListener('keydown', function(e) {
-    if (e.code == "Space") list.classList.toggle('active');
-    document.addEventListener('click', handleClickOutsideList);
-})
+// document.addEventListener('keydown', function(e) {
+//     if (e.code == "Space") list.classList.toggle('active');
+//     document.addEventListener('click', handleClickOutsideList);
+// })
 list.addEventListener('click', function(e) {
     const target = e.target;
     if (target.dataset.index) {
@@ -346,18 +384,17 @@ closeTest.addEventListener('click', function() {
 toggleTashkilBtn.addEventListener("change", function(){
     displayHadith();
 })
+bookOptions.addEventListener("change", async function(e){
+    currentBook = e.target.value;
+    currentHadith = 0;
+    await updateHadiths(currentBook, state); 
+})
 
 // ------------ Standalone code ----------------
-for (const [i, title] of hadithTitles.entries()) {
-    const newItem = document.createElement('li');
-    newItem.className = 'list-item';
-    newItem.innerText = (i + 1) + ". " + title + "...";
-    newItem.dataset.index = i;
-    listItems.appendChild(newItem);
-}
 
 localStorage.setItem('userData', JSON.stringify({
     currentHadith: currentHadith,
+    currentBook: currentBook,
     visits: visits,
 }));
 

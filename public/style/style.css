@@ -52,8 +52,8 @@ h1 {
 }
 
 .list>h2 {
-    position: absolute;
-    top: 10px;
+    /**position: absolute;
+    top: 10px;**/
 }
 
 ul {
@@ -66,8 +66,8 @@ ul {
     border: 1px;
 }
 .list-items{
-    margin-top: 50px;
-    max-height: 550px;
+    margin-top: 20px;
+    max-height: 500px;
     overflow-y: auto;
     background: #00649d;
     border-radius: 7px;
