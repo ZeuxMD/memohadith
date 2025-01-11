@@ -1,6 +1,7 @@
 :root {}
 
 body {
+    font-family: "Amiri", serif;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -11,6 +12,7 @@ body {
     background: url(../images/2.jpg) no-repeat scroll center top transparent;
     background-size: auto 100%;
     color: white;
+    font-size: 20px;
 }
 
 .overlay {
@@ -37,9 +39,11 @@ h1 {
     top: 0;
     width: 200px;
     height: 100vh;
+    height: 100svh;
     overflow-y: auto;
     padding-left: 10px;
-    padding-right: 3px;
+    padding-right: 5px;
+    padding-bottom: 10px;
     transition: 0.3s;
     z-index: 1000;
     transition: all ease-int 0.3s;
@@ -49,11 +53,6 @@ h1 {
     justify-content: center;
     border: 1px blue;
     background: #00549d;
-}
-
-.list>h2 {
-    /**position: absolute;
-    top: 10px;**/
 }
 
 ul {
@@ -68,6 +67,7 @@ ul {
 .list-items{
     margin-top: 20px;
     max-height: 500px;
+    height: max-content;
     overflow-y: auto;
     background: #00649d;
     border-radius: 7px;
@@ -197,4 +197,20 @@ input:checked + .slider:before {
     position: absolute;
     left: 30px;
     bottom: 20px;
+}
+
+button{
+    padding: 10px;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    background-color: #00549d90;
+    cursor: pointer;
+}
+select{
+    background-color: #00649d;
+    color: white;
+    width: 200px; 
+    border-radius: 6px;
+    border: 1px ;
 }

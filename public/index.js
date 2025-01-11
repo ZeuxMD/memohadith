@@ -28,14 +28,13 @@ for(let key in hadithCollectionData){
 }
 // make nawawi first choice in the list
 bookOptions.insertBefore(bookOptions.removeChild(bookOptions.querySelector("[value='nawawi']")), bookOptions.firstElementChild);
-bookOptions.querySelector("[value='nawawi']").selected = true;
 
 const hadithDisplay = document.getElementById("hadith")
 const memorizedBtn = document.querySelector(".memorized-btn")
 const listBtn = document.querySelector(".list-btn")
 const list = document.querySelector(".list")
 const listItems = document.querySelector(".list-items")
-const testBtn = document.querySelector(".test-btn");
+//const testBtn = document.querySelector(".test-btn");
 const testWindow = document.querySelector('.test-window');
 const closeTest = document.querySelector('.close-test');
 const questionContainer = document.querySelector('.question-container');
@@ -61,6 +60,7 @@ let currAns;
 visits = userData?.visits + 1 || 0;
 currentHadith = userData?.currentHadith || 0;
 currentBook = userData?.currentBook || "nawawi";
+bookOptions.querySelector(`[value=${currentBook}]`).selected = true;
 
 await updateHadiths(currentBook, state);
 // ------------ functions ----------------
@@ -117,7 +117,12 @@ function removeTashkeel(text) {
 
 function displayHadith() {
     const hadithsToDisplay = toggleTashkilBtn.checked ? state.hadithsNoTashkil : state.hadiths;
-    hadithDisplay.textContent = hadithsToDisplay[currentHadith];
+    hadithDisplay.textContent = `${currentHadith + 1}- ${hadithsToDisplay[currentHadith]}`;
+    localStorage.setItem('userData', JSON.stringify({
+        currentHadith: currentHadith,
+        currentBook: currentBook,
+        visits: visits,
+    }));
 }
 
 function pickHadith() {
@@ -139,17 +144,14 @@ function nextHadith() {
 
 function setHadith(newValue) {
     currentHadith = parseInt(newValue);
-    localStorage.setItem('userData', JSON.stringify({
-        currentHadith: currentHadith,
-        visits: visits,
-    }));
 }
 
 function displayHadithTitles() {
     const titles = [];
     for (const [i, h] of state.hadithsNoTashkil.entries()) {
-        let start = h.indexOf(":");
-        const title = h.slice(start + 1, start + 30).split(" ").splice(0, 4).join(" ");
+        let start = h.indexOf("\"") + 1 || h.indexOf(":") + 1 || h.indexOf("سلم ") + 3;
+        if(i == 4) console.log(start);
+        const title = h.slice(start, start + 30).split(" ").splice(0, 4).join(" ");
         const newTitle = document.createElement('li');
         newTitle.className = 'list-item';
         newTitle.innerText = (i + 1) + ". " + title + "...";
@@ -347,32 +349,32 @@ list.addEventListener('click', function(e) {
         displayHadith();
     }
 })
-testBtn.addEventListener('click', function(e) {
-    e.stopPropagation();
-
-    testWindow.classList.add('active');
-    randTest = getRandomizedTest(currentHadith);
-    currentQuestion = 0;
-    if (randTest.length > 1){
-        currAns = getQuestion(randTest[0]);
-        testScore = 0;
-        currentQuestion = 0;
-        checkAns.style.visibility = "visible";
-    }
-    else {
-        questionContainer.textContent = "احفظ حديثين على الأقل ثم اختبر :)";
-        checkAns.style.visibility = "hidden";
-    }
-    const handleClickOutside = function(e) {
-        if (!testWindow.contains(e.target)) {
-            testWindow.classList.remove('active');
-            randTest = null;
-            document.removeEventListener('click', handleClickOutside);
-        }
-    };
-
-    document.addEventListener('click', handleClickOutside);
-})
+//testBtn.addEventListener('click', function(e) {
+//    e.stopPropagation();
+//
+//    testWindow.classList.add('active');
+//    randTest = getRandomizedTest(currentHadith);
+//    currentQuestion = 0;
+//    if (randTest.length > 1){
+//        currAns = getQuestion(randTest[0]);
+//        testScore = 0;
+//        currentQuestion = 0;
+//        checkAns.style.visibility = "visible";
+//    }
+//    else {
+//        questionContainer.textContent = "احفظ حديثين على الأقل ثم اختبر :)";
+//        checkAns.style.visibility = "hidden";
+//    }
+//    const handleClickOutside = function(e) {
+//        if (!testWindow.contains(e.target)) {
+//            testWindow.classList.remove('active');
+//            randTest = null;
+//            document.removeEventListener('click', handleClickOutside);
+//        }
+//    };
+//
+//    document.addEventListener('click', handleClickOutside);
+//})
 checkAns.addEventListener('click', function() {
     nextQuestion();
 });
@@ -386,6 +388,7 @@ toggleTashkilBtn.addEventListener("change", function(){
 })
 bookOptions.addEventListener("change", async function(e){
     currentBook = e.target.value;
+    console.log(currentBook);
     currentHadith = 0;
     await updateHadiths(currentBook, state); 
 })
@@ -399,4 +402,4 @@ localStorage.setItem('userData', JSON.stringify({
 }));
 
 
-//console.log(userData, visits);
+console.log(userData, visits);
