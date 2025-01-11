@@ -1,51 +1,59 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="./public/style/style.css">
     <link rel="stylesheet" href="./public/style/normalize.css">
-    <title>MemoHadith</title>
-  </head>
-  <body>
+    <title>Memohadith</title>
+</head>
+
+<body>
     <div class="overlay">
     </div>
-    <h1 class="">مساعد حفظ الحديث</h1>
-    <p id="hadith"></p>
-    <div class="list">
-        <h2>قائمة الأحاديث</h2>
-        <div class="">
-            <select class="book-options">
-            </select>
+    <h3 class="title">المساعد الحديثي</h1>
+        <main>
+            <div class="hadith-container">
+                <p id="hadith"></p>
+            </div>
+            <div class="list">
+                <h2>قائمة الأحاديث</h2>
+                <div class="">
+                    <select class="book-options">
+                    </select>
+                </div>
+                <ul class="list-items">
+                </ul>
+            </div>
+            <div class="btns-container">
+                <button class="memorized-btn">الحديث التالي</button>
+                <!-- <button class="test-btn">اختبرني في الحفظ</button> -->
+            </div>
+            <button class="list-btn">القائمة</button>
+            <div class="test-window">
+                <div class="close-test">&times;</div>
+                <div class="question-container"></div>
+                <div class="ans-container">
+                    <h3 class="question-head"></h3>
+                    <div class="answer-input"></div>
+                </div>
+                <button class="check-ans">السؤال التالي</button>
+                <!-- TODO: add button to toggle tashkil -->
+            </div>
+        </main>
+        <div class="tashkil">
+            <label>أزل التشكيل</label>
+            <label class="switch">
+                <input type="checkbox" id="toggleTashkil">
+                <span class="slider round"></span>
+            </label>
         </div>
-        <ul class="list-items">
-        </ul>
-    </div>
-    <div>
-        <button class="memorized-btn">الحديث التالي</button>
-        <button class="list-btn">القائمة</button>
-        <!-- <button class="test-btn">اختبرني في الحفظ</button> -->
-    </div>
-    <div class="test-window">
-        <div class="close-test">&times;</div>
-        <div class="question-container"></div>
-        <div class="ans-container">
-            <h3 class="question-head"></h3>
-            <div class="answer-input"></div>
-        </div>
-        <button class="check-ans">السؤال التالي</button>
-        <!-- TODO: add button to toggle tashkil -->
-    </div>
-    <div class="tashkil">
-        <label>أزل التشكيل</label>
-        <label class="switch">
-          <input type="checkbox" id="toggleTashkil">
-          <span class="slider round"></span>
-        </label>
-    </div>
-    <script type="module" src="./public/index.js"></script>
-  </body>
+        <script type="module" src="./public/index.js"></script>
+</body>
+
 </html>

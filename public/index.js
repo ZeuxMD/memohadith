@@ -14,13 +14,13 @@ arBookNames.set("nawawi", "الأربعون النووية")
 arBookNames.set("tirmidhi", "جامع الترمذي")
 const bookOptions = document.querySelector('.book-options');
 
-for(let key in hadithCollectionData){
+for (let key in hadithCollectionData) {
     const collection = hadithCollectionData[key].collection;
     urls[key] = collection[0].link;
-    for(const c of collection){
-        if(c.language === "English") engUrls[key] = c.link;
+    for (const c of collection) {
+        if (c.language === "English") engUrls[key] = c.link;
     }
-    if(!arBookNames.get(key)) continue;
+    if (!arBookNames.get(key)) continue;
     const option = document.createElement("option");
     option.value = key;
     option.text = arBookNames.get(key);
@@ -46,7 +46,7 @@ const toggleTashkilBtn = document.getElementById('toggleTashkil');
 
 let userData = JSON.parse(localStorage.getItem('userData'));
 let currentBook = "nawawi";
-let state = {hadiths: null, hadithsNoTashkil: null, hadithTitles: null};
+let state = { hadiths: null, hadithsNoTashkil: null, hadithTitles: null };
 
 let currentHadith;
 let visits;
@@ -65,48 +65,49 @@ bookOptions.querySelector(`[value=${currentBook}]`).selected = true;
 await updateHadiths(currentBook, state);
 // ------------ functions ----------------
 
-async function updateHadiths(currentBook, state){
+async function updateHadiths(currentBook, state) {
     const result = await getHadithArrays(currentBook);
     state.hadiths = result[0];
     state.hadithsNoTashkil = result[1];
-    displayHadithTitles(); 
+    displayHadithTitles();
     displayHadith();
 }
 
-async function getHadithArrays(currentBook){
+async function getHadithArrays(currentBook) {
     return extractHadithFromData(await getDatafromAPI(urls[currentBook]));
 }
 
-function extractHadithFromData(data){
+function extractHadithFromData(data) {
     const hadithData = data?.hadiths;
     const hadithsArr = [];
     const hadithsNoTashkil = [];
-    for(const h of hadithData){
-        hadithsArr.push(h.text);
-        hadithsNoTashkil.push(removeTashkeel(h.text));
+    for (const h of hadithData) {
+        const text = h.text.replaceAll("<br>", "");
+        hadithsArr.push(text);
+        hadithsNoTashkil.push(removeTashkeel(text));
     }
     return [hadithsArr, hadithsNoTashkil];
 }
 
-async function getDatafromAPI(url){
+async function getDatafromAPI(url) {
     let data;
     await fetch(url)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`Failed to fetch data. Status code: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(d => {
-          data = d;
-      })
-      .catch(error => {
-        console.error("Error fetching data:", error);
-      });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Failed to fetch data. Status code: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(d => {
+            data = d;
+        })
+        .catch(error => {
+            console.error("Error fetching data:", error);
+        });
     return data;
 }
 
-function getArabicName(engName){
+function getArabicName(engName) {
     return arBookNames.get(engName);
 }
 
@@ -150,11 +151,10 @@ function displayHadithTitles() {
     const titles = [];
     for (const [i, h] of state.hadithsNoTashkil.entries()) {
         let start = h.indexOf("\"") + 1 || h.indexOf(":") + 1 || h.indexOf("سلم ") + 3;
-        if(i == 4) console.log(start);
-        const title = h.slice(start, start + 30).split(" ").splice(0, 4).join(" ");
+        const title = h.slice(start, start + 20).split(" ").splice(0, 4).join(" ");
         const newTitle = document.createElement('li');
         newTitle.className = 'list-item';
-        newTitle.innerText = (i + 1) + ". " + title + "...";
+        newTitle.innerText = (i + 1) + ". " + title + "..";
         newTitle.dataset.index = i;
         titles.push(newTitle);
     }
@@ -167,7 +167,7 @@ function getNarrators(hadithArr) {
     const narrators = [];
     for (const h of hadith) {
         const narrator = getNarrator(h)[0];
-        if(narrators.includes(narrator)) continue;
+        if (narrators.includes(narrator)) continue;
         narrators.push(narrator);
     }
     return narrators;
@@ -219,21 +219,21 @@ function nextQuestion() {
     checkAnswer();
     currentQuestion++;
     checkAns.textContent = "السؤال التالي";
-    if(currentQuestion == randTest.length - 1){
+    if (currentQuestion == randTest.length - 1) {
         checkAns.textContent = "انهي الاختبار";
-    } else if(currentQuestion == randTest.length) {
+    } else if (currentQuestion == randTest.length) {
         currentQuestion = 0;
         console.log(testScore);
     }
     currAns = getQuestion(randTest[currentQuestion]);
 }
-function checkAnswer(){
+function checkAnswer() {
     const textInput = answerInput.querySelector('input[type="text"]');
-    if(textInput){
-        if(textInput.textContent == currAns) testScore++;
+    if (textInput) {
+        if (textInput.textContent == currAns) testScore++;
     } else {
         const checked = answerInput.querySelector('input[name="answer"]:checked').value;
-        if(checked === currAns){
+        if (checked === currAns) {
             testScore++;
         }
     }
@@ -288,14 +288,14 @@ function displayMCQ(ans, answersArr) {
     const answers = createMultipleChoice(ans, answersArr);
     const msqList = document.createElement('ul');
     msqList.className = "msq-list";
-    for(const a of answers){
+    for (const a of answers) {
         const msq = document.createElement('li');
         const choiceLabel = document.createElement('label');
         const choice = document.createElement('input');
         choice.type = "radio";
         choice.name = "answer";
-        choice.value = a; 
-        choiceLabel.textContent = " " +a;
+        choice.value = a;
+        choiceLabel.textContent = " " + a;
         msq.className = "msq-item";
         msq.appendChild(choice);
         msq.appendChild(choiceLabel);
@@ -329,7 +329,7 @@ const handleClickOutsideList = function(e) {
     if (!list.contains(e.target)) {
         list.classList.remove('active');
         document.removeEventListener('click', handleClickOutsideList);
-    } 
+    }
 };
 
 listBtn.addEventListener('click', function(e) {
@@ -383,14 +383,14 @@ closeTest.addEventListener('click', function() {
     randTest = null;
 })
 
-toggleTashkilBtn.addEventListener("change", function(){
+toggleTashkilBtn.addEventListener("change", function() {
     displayHadith();
 })
-bookOptions.addEventListener("change", async function(e){
+bookOptions.addEventListener("change", async function(e) {
     currentBook = e.target.value;
     console.log(currentBook);
     currentHadith = 0;
-    await updateHadiths(currentBook, state); 
+    await updateHadiths(currentBook, state);
 })
 
 // ------------ Standalone code ----------------
