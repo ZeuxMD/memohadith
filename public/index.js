@@ -2,7 +2,8 @@
 const urls = {}
 const engUrls = {}
 const hadithCollectionUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions.json";
-const hadithCollectionData = await getDatafromAPI(hadithCollectionUrl);
+const hadithCollectionData = JSON.parse(localStorage.getItem('collectionData')) || await getDatafromAPI(hadithCollectionUrl);
+console.log(hadithCollectionData);
 const arBookNames = new Map();
 arBookNames.set("abudawud", "سنن أبي داوود")
 arBookNames.set("bukhari", "صحيح البخاري")
@@ -12,22 +13,6 @@ arBookNames.set("muslim", "صحيح مسلم")
 arBookNames.set("nasai", "سنن النسائي")
 arBookNames.set("nawawi", "الأربعون النووية")
 arBookNames.set("tirmidhi", "جامع الترمذي")
-const bookOptions = document.querySelector('.book-options');
-
-for (let key in hadithCollectionData) {
-    const collection = hadithCollectionData[key].collection;
-    urls[key] = collection[0].link;
-    for (const c of collection) {
-        if (c.language === "English") engUrls[key] = c.link;
-    }
-    if (!arBookNames.get(key)) continue;
-    const option = document.createElement("option");
-    option.value = key;
-    option.text = arBookNames.get(key);
-    bookOptions.appendChild(option);
-}
-// make nawawi first choice in the list
-bookOptions.insertBefore(bookOptions.removeChild(bookOptions.querySelector("[value='nawawi']")), bookOptions.firstElementChild);
 
 const hadithDisplay = document.getElementById("hadith")
 const memorizedBtn = document.querySelector(".memorized-btn")
@@ -43,6 +28,7 @@ const answerContainer = document.querySelector('.ans-container');
 const questionHeadEl = document.querySelector('.question-head');
 const answerInput = document.querySelector('.answer-input');
 const toggleTashkilBtn = document.getElementById('toggleTashkil');
+const bookOptions = document.querySelector('.book-options');
 
 let userData = JSON.parse(localStorage.getItem('userData'));
 let currentBook = "nawawi";
@@ -57,9 +43,22 @@ let currentQuestion;
 let testScore = 0;
 let currAns;
 
-visits = userData?.visits + 1 || 0;
-currentHadith = userData?.currentHadith || 0;
-currentBook = userData?.currentBook || "nawawi";
+for (let key in hadithCollectionData) {
+    const collection = hadithCollectionData[key].collection;
+    urls[key] = collection[0].link;
+    for (const c of collection) {
+        if (c.language === "English") engUrls[key] = c.link;
+    }
+    if (!arBookNames.get(key)) continue;
+    const option = document.createElement("option");
+    option.value = key;
+    option.text = arBookNames.get(key);
+    bookOptions.appendChild(option);
+}
+
+visits = (userData?.visits ?? 0) + 1;
+currentHadith = userData?.currentHadith ?? 0;
+currentBook = userData?.currentBook ?? "nawawi";
 bookOptions.querySelector(`[value=${currentBook}]`).selected = true;
 
 await updateHadiths(currentBook, state);
@@ -90,21 +89,17 @@ function extractHadithFromData(data) {
 }
 
 async function getDatafromAPI(url) {
-    let data;
-    await fetch(url)
+    return fetch(url)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`Failed to fetch data. Status code: ${response.status}`);
             }
             return response.json();
         })
-        .then(d => {
-            data = d;
-        })
+        .then(data => data)
         .catch(error => {
             console.error("Error fetching data:", error);
         });
-    return data;
 }
 
 function getArabicName(engName) {
@@ -400,6 +395,4 @@ localStorage.setItem('userData', JSON.stringify({
     currentBook: currentBook,
     visits: visits,
 }));
-
-
-console.log(userData, visits);
+localStorage.setItem('collectionData', JSON.stringify(hadithCollectionData));
