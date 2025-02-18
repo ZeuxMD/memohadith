@@ -13,9 +13,10 @@ arBookNames.set("muslim", "صحيح مسلم")
 arBookNames.set("nasai", "سنن النسائي")
 arBookNames.set("nawawi", "الأربعون النووية")
 arBookNames.set("tirmidhi", "جامع الترمذي")
-
+//TODO: delve into indexedDB and see if you can use that to improve performance
 const hadithDisplay = document.getElementById("hadith")
-const memorizedBtn = document.querySelector(".memorized-btn")
+const nextHadithBtn = document.querySelector(".next-hadith")
+const prevHadithBtn = document.querySelector(".prev-hadith")
 const listBtn = document.querySelector(".list-btn")
 const list = document.querySelector(".list")
 const listItems = document.querySelector(".list-items")
@@ -133,8 +134,19 @@ function nextHadith() {
     displayHadith();
 
     localStorage.setItem('userData', JSON.stringify({
+        ...userData,
         currentHadith: currentHadith,
-        visits: visits,
+    }));
+}
+
+function prevHadith() {
+    currentHadith--;
+    if (currentHadith < 0) currentHadith = state.hadiths.length - 1;
+    displayHadith();
+
+    localStorage.setItem('userData', JSON.stringify({
+        ...userData,
+        currentHadith: currentHadith,
     }));
 }
 
@@ -316,9 +328,12 @@ function createMultipleChoice(realAns, answersArr) {
 }
 
 // ------------ Event listeners ----------------
-memorizedBtn.addEventListener('click', function() {
+nextHadithBtn.addEventListener('click', function() {
     nextHadith();
 })
+prevHadithBtn.addEventListener('click', function () {
+    prevHadith();
+});
 
 const handleClickOutsideList = function(e) {
     if (!list.contains(e.target)) {
