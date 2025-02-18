@@ -115,11 +115,6 @@ function removeTashkeel(text) {
 function displayHadith() {
     const hadithsToDisplay = toggleTashkilBtn.checked ? state.hadithsNoTashkil : state.hadiths;
     hadithDisplay.textContent = `${currentHadith + 1}- ${hadithsToDisplay[currentHadith]}`;
-    localStorage.setItem('userData', JSON.stringify({
-        currentHadith: currentHadith,
-        currentBook: currentBook,
-        visits: visits,
-    }));
 }
 
 function pickHadith() {
@@ -169,8 +164,7 @@ function displayHadithTitles() {
 }
 
 function getNarrators(hadithArr) {
-    let hadith = state.hadiths;
-    if (arguments.length > 0) hadith = hadithArr;
+    const hadith = hadithArr ?? state.hadiths;
     const narrators = [];
     for (const h of hadith) {
         const narrator = getNarrator(h)[0];
@@ -183,7 +177,7 @@ function getNarrator(hadith) {
     const end = hadith.indexOf("رضي ");
     return [hadith.slice(0, end), end];
 }
-narrators = getNarrators();
+//narrators = getNarrators();
 
 function getExtractors() {
     const extractors = [];
@@ -205,7 +199,7 @@ function getExtractor(hadith) {
     }
     return [hadith.slice(start + 1, end), start];
 }
-extractors = getExtractors();
+//extractors = getExtractors();
 
 function getRandomizedTest(testLength) {
     const memorizedHadith = state.hadiths.slice(0, testLength)
@@ -331,7 +325,7 @@ function createMultipleChoice(realAns, answersArr) {
 nextHadithBtn.addEventListener('click', function() {
     nextHadith();
 })
-prevHadithBtn.addEventListener('click', function () {
+prevHadithBtn.addEventListener('click', function() {
     prevHadith();
 });
 

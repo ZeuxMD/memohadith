@@ -9,7 +9,7 @@ body {
     background: url(../images/2.jpg) no-repeat scroll center top transparent;
     background-size: auto 100%;
     color: white;
-    font-size: 20px;
+    font-size: 1.5rem;
 }
 
 main {
@@ -36,7 +36,7 @@ main {
     top: 25px;
     left: 20px;
     font-family: 'Times New Roman', Times, serif;
-    font-size: 22px;
+    font-size: 1.7rem;
     margin: 0;
 }
 
