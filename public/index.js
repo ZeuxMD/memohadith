@@ -32,10 +32,11 @@ const toggleTashkilBtn = document.getElementById('toggleTashkil');
 const bookOptions = document.querySelector('.book-options');
 
 let userData = JSON.parse(localStorage.getItem('userData'));
-let currentBook = "nawawi";
 let state = { hadiths: null, hadithsNoTashkil: null, hadithTitles: null };
 
+let tashkilOn = true;
 let currentHadith;
+let currentBook;
 let visits;
 let randTest;
 let narrators;
@@ -112,9 +113,18 @@ function removeTashkeel(text) {
     return text.replace(tashkeelRegex, '');
 }
 
+
+
 function displayHadith() {
-    const hadithsToDisplay = toggleTashkilBtn.checked ? state.hadithsNoTashkil : state.hadiths;
+    const hadithsToDisplay = tashkilOn ? state.hadiths : state.hadithsNoTashkil;
     hadithDisplay.textContent = `${currentHadith + 1}- ${hadithsToDisplay[currentHadith]}`;
+
+    localStorage.setItem('userData', JSON.stringify({
+        ...userData,
+        currentHadith: currentHadith,
+        currentBook: currentBook,
+        tashkilOn: tashkilOn,
+    }));
 }
 
 function pickHadith() {
@@ -127,22 +137,12 @@ function nextHadith() {
     //TODO: add congratulations message if you finished a series of hadiths
     if (currentHadith == state.hadiths.length) currentHadith = 0;
     displayHadith();
-
-    localStorage.setItem('userData', JSON.stringify({
-        ...userData,
-        currentHadith: currentHadith,
-    }));
 }
 
 function prevHadith() {
     currentHadith--;
     if (currentHadith < 0) currentHadith = state.hadiths.length - 1;
     displayHadith();
-
-    localStorage.setItem('userData', JSON.stringify({
-        ...userData,
-        currentHadith: currentHadith,
-    }));
 }
 
 function setHadith(newValue) {
@@ -388,11 +388,11 @@ closeTest.addEventListener('click', function() {
 })
 
 toggleTashkilBtn.addEventListener("change", function() {
+    tashkilOn = !tashkilOn;
     displayHadith();
 })
 bookOptions.addEventListener("change", async function(e) {
     currentBook = e.target.value;
-    console.log(currentBook);
     currentHadith = 0;
     await updateHadiths(currentBook, state);
 })
@@ -402,6 +402,7 @@ bookOptions.addEventListener("change", async function(e) {
 localStorage.setItem('userData', JSON.stringify({
     currentHadith: currentHadith,
     currentBook: currentBook,
+    tashkilOn: tashkilOn,
     visits: visits,
 }));
 localStorage.setItem('collectionData', JSON.stringify(hadithCollectionData));
