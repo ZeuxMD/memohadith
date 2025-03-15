@@ -270,10 +270,8 @@ select {
     border: 2px solid transparent;
     /* Ensure the thumb doesn't overlap the track */
     box-shadow: 0 0 0 2px transparent;
-    /* Extend the padding with a transparent box-shadow */
 }
 
 ::-webkit-scrollbar-thumb:hover {
     background: #666666;
-    /* You can adjust this color for the hover state */
 }
