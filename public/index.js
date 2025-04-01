@@ -1,9 +1,6 @@
 //TODO: add english translations
-const urls = {}
-const engUrls = {}
 const hadithCollectionUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions.json";
-const hadithCollectionData = JSON.parse(localStorage.getItem('collectionData')) || await getDatafromAPI(hadithCollectionUrl);
-console.log(hadithCollectionData);
+// List of the books I want
 const arBookNames = new Map();
 arBookNames.set("abudawud", "سنن أبي داوود")
 arBookNames.set("bukhari", "صحيح البخاري")
@@ -13,7 +10,12 @@ arBookNames.set("muslim", "صحيح مسلم")
 arBookNames.set("nasai", "سنن النسائي")
 arBookNames.set("nawawi", "الأربعون النووية")
 arBookNames.set("tirmidhi", "جامع الترمذي")
-//TODO: delve into indexedDB and see if you can use that to improve performance
+const bookOptions = document.querySelector('.book-options');
+
+const urls = await getUrls(hadithCollectionUrl);
+createOptionsList(urls);
+
+console.log(urls);
 const hadithDisplay = document.getElementById("hadith")
 const nextHadithBtn = document.querySelector(".next-hadith")
 const prevHadithBtn = document.querySelector(".prev-hadith")
@@ -29,12 +31,11 @@ const answerContainer = document.querySelector('.ans-container');
 const questionHeadEl = document.querySelector('.question-head');
 const answerInput = document.querySelector('.answer-input');
 const toggleTashkilBtn = document.getElementById('toggleTashkil');
-const bookOptions = document.querySelector('.book-options');
 
 let userData = JSON.parse(localStorage.getItem('userData'));
 let state = { hadiths: null, hadithsNoTashkil: null, hadithTitles: null };
 
-let tashkilOn = true;
+let tashkilOn;
 let currentHadith;
 let currentBook;
 let visits;
@@ -45,26 +46,45 @@ let currentQuestion;
 let testScore = 0;
 let currAns;
 
-for (let key in hadithCollectionData) {
-    const collection = hadithCollectionData[key].collection;
-    urls[key] = collection[0].link;
-    for (const c of collection) {
-        if (c.language === "English") engUrls[key] = c.link;
-    }
-    if (!arBookNames.get(key)) continue;
-    const option = document.createElement("option");
-    option.value = key;
-    option.text = arBookNames.get(key);
-    bookOptions.appendChild(option);
-}
-
+// if there is no cached data, initialize to defaults
 visits = (userData?.visits ?? 0) + 1;
 currentHadith = userData?.currentHadith ?? 0;
 currentBook = userData?.currentBook ?? "nawawi";
+tashkilOn = userData?.tashkilOn ?? true;
 bookOptions.querySelector(`[value=${currentBook}]`).selected = true;
 
 await updateHadiths(currentBook, state);
 // ------------ functions ----------------
+
+async function getUrls(collectionUrl) {
+    const urls = {};
+
+    if (!localStorage.getItem("urls")) {
+        const collectionData = await getDatafromAPI(collectionUrl);
+
+        for (let key in collectionData) {
+            if (!arBookNames.get(key)) continue;
+            const collection = collectionData[key].collection;
+            urls[key] = { ar: "", en: "" };
+            urls[key].ar = collection[0].link;
+            for (const c of collection) {
+                if (c.language === "English") urls[key].en = c.link;
+            }
+        }
+        return urls;
+    }
+
+    return JSON.parse(localStorage.getItem(("urls")));
+}
+
+function createOptionsList(urls) {
+    for (let bookName in urls) {
+        const option = document.createElement("option");
+        option.value = bookName;
+        option.text = arBookNames.get(bookName);
+        bookOptions.appendChild(option);
+    }
+}
 
 async function updateHadiths(currentBook, state) {
     const result = await getHadithArrays(currentBook);
@@ -75,7 +95,7 @@ async function updateHadiths(currentBook, state) {
 }
 
 async function getHadithArrays(currentBook) {
-    return extractHadithFromData(await getDatafromAPI(urls[currentBook]));
+    return extractHadithFromData(await getDatafromAPI(urls[currentBook].ar));
 }
 
 function extractHadithFromData(data) {
@@ -405,4 +425,3 @@ localStorage.setItem('userData', JSON.stringify({
     tashkilOn: tashkilOn,
     visits: visits,
 }));
-localStorage.setItem('collectionData', JSON.stringify(hadithCollectionData));
