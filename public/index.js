@@ -87,7 +87,13 @@ function createOptionsList(urls) {
 }
 
 async function updateHadiths(currentBook, state) {
-    state.hadiths = await getDatafromAPI(urls[currentBook].ar);
+    const jsonData = await getDatafromAPI(urls[currentBook].ar);
+    // handle fetching before service worker is installed (i'll make it look better later.. i think)
+    let hadiths;
+    if (jsonData.hadiths) {
+        hadiths = jsonData.hadiths.map(hadith => hadith.text.replaceAll("<br>", ""));
+    }
+    state.hadiths = hadiths ?? jsonData;
     state.hadithsNoTashkil = extractHadithNoTashkil(state.hadiths);
     displayHadithTitles(state.hadithsNoTashkil);
     displayHadith();
@@ -405,6 +411,35 @@ bookOptions.addEventListener("change", async function(e) {
     currentHadith = 0;
     await updateHadiths(currentBook, state);
 })
+
+// PWA installation prompt
+
+
+let deferredPrompt;
+const pwaPopup = document.getElementById("pwa-install");
+
+window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredPrompt = event;
+    pwaPopup.classList.remove("hidden");
+});
+
+document.getElementById("accept-pwa").addEventListener("click", () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === "accepted") {
+                console.log("PWA installed");
+            }
+            pwaPopup.classList.add("hidden");
+            deferredPrompt = null;
+        });
+    }
+});
+
+document.getElementById("deny-pwa").addEventListener("click", () => {
+    pwaPopup.classList.add("hidden");
+});
 
 // ------------ Standalone code ----------------
 

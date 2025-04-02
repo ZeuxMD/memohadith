@@ -14,6 +14,7 @@ const urlsToCache = [
 	"./public/style/normalize.css",
 	"./public/index.js",
 	"./public/images/2.jpg",
+	"./public/images/192.jpg",
 	"./public/favicon.ico",
 ];
 
@@ -73,12 +74,9 @@ self.addEventListener("activate", (event) => {
 		caches.keys().then(cacheNames => {
 			debugLog('Checking caches:', cacheNames);
 			return Promise.all(
-				cacheNames.map(cache => {
-					if (cache !== CACHE_NAME) {
-						debugLog('Deleting old cache:', cache);
-						return caches.delete(cache);
-					}
-				})
+				cacheNames
+					.filter((cache) => cache !== CACHE_NAME)
+					.map((oldCache) => caches.delete(oldCache))
 			);
 		}).then(() => {
 			debugLog('Activation complete, claiming clients');
@@ -93,7 +91,6 @@ self.addEventListener("fetch", (event) => {
 	// Only use IndexedDB for API requests
 	if (url.includes('/api/') || url.includes('json')) {
 		debugLog('Handling API request:', url);
-
 		event.respondWith(handleStaticApiRequest(event.request));
 	} else {
 		// For non-API requests, use cache-first
@@ -110,11 +107,12 @@ self.addEventListener("fetch", (event) => {
 					return fetch(event.request)
 						.then(response => {
 							// Cache the fetched response
-							if (response.ok && response.type === 'basic') {
+							const res = response.clone();
+							if (res.ok && res.type === 'basic') {
 								debugLog('Caching new response for:', url);
 								caches.open(CACHE_NAME)
 									.then(cache => {
-										cache.put(event.request, response.clone());
+										cache.put(event.request, res);
 										debugLog('Successfully cached response for:', url);
 									});
 							}

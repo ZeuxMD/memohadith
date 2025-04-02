@@ -18,54 +18,62 @@
 <body>
     <div class="overlay">
     </div>
-    <h3 class="title">المساعد الحديثي</h1>
-        <main>
-            <div class="hadith-container">
-                <p id="hadith"></p>
-            </div>
-            <div class="list">
-                <h2>قائمة الأحاديث</h2>
-                <div class="">
-                    <select class="book-options">
-                    </select>
-                </div>
-                <ul class="list-items">
-                </ul>
-            </div>
-            <div class="btns-container">
-                <button class="prev-hadith">الحديث السابق</button>
-                <button class="next-hadith">الحديث التالي</button>
-                <!-- <button class="test-btn">اختبرني في الحفظ</button> -->
-            </div>
-            <button class="list-btn">القائمة</button>
-            <div class="test-window">
-                <div class="close-test">&times;</div>
-                <div class="question-container"></div>
-                <div class="ans-container">
-                    <h3 class="question-head"></h3>
-                    <div class="answer-input"></div>
-                </div>
-                <button class="check-ans">السؤال التالي</button>
-                <!-- TODO: add button to toggle tashkil -->
-            </div>
-        </main>
-        <div class="tashkil">
-            <label>أزل التشكيل</label>
-            <label class="switch">
-                <input type="checkbox" id="toggleTashkil">
-                <span class="slider round"></span>
-            </label>
+    <h3 class="title">المساعد الحديثي</h3>
+    <main>
+        <div class="hadith-container">
+            <p id="hadith"></p>
         </div>
-        <script type="module" src="./public/index.js"></script>
-        <script>
-            if ("serviceWorker" in navigator) {
-                window.addEventListener("load", () => {
-                    navigator.serviceWorker.register("./service-worker.js")
-                        .then(() => console.log("Service Worker Registered"))
-                        .catch((err) => console.log("Service Worker Registration Failed", err));
-                });
-            }
-        </script>
+        <div class="list">
+            <h2>قائمة الأحاديث</h2>
+            <div class="">
+                <select class="book-options">
+                </select>
+            </div>
+            <ul class="list-items">
+            </ul>
+        </div>
+        <div class="btns-container">
+            <button class="prev-hadith">الحديث السابق</button>
+            <button class="next-hadith">الحديث التالي</button>
+            <!-- <button class="test-btn">اختبرني في الحفظ</button> -->
+        </div>
+        <button class="list-btn">القائمة</button>
+        <div class="test-window">
+            <div class="close-test">&times;</div>
+            <div class="question-container"></div>
+            <div class="ans-container">
+                <h3 class="question-head"></h3>
+                <div class="answer-input"></div>
+            </div>
+            <button class="check-ans">السؤال التالي</button>
+            <!-- TODO: add button to toggle tashkil -->
+        </div>
+
+    </main>
+    <div id="pwa-install" class="hidden">
+        <p>احفظ البرنامج على هاتفك</p>
+        <div>
+            <button id="accept-pwa">حفظ</button>
+            <button id="deny-pwa">ليس الآن</button>
+        </div>
+    </div>
+    <div class="tashkil">
+        <label>أزل التشكيل</label>
+        <label class="switch">
+            <input type="checkbox" id="toggleTashkil">
+            <span class="slider round"></span>
+        </label>
+    </div>
+    <script type="module" src="./public/index.js"></script>
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("./service-worker.js")
+                    .then(() => console.log("Service Worker Registered"))
+                    .catch((err) => console.log("Service Worker Registration Failed", err));
+            });
+        }
+    </script>
 </body>
 
 </html>
