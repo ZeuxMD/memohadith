@@ -14,7 +14,7 @@ const urlsToCache = [
 	"./public/style/normalize.css",
 	"./public/index.js",
 	"./public/images/2.jpg",
-	"./public/images/192.jpg",
+	"./public/images/192.png",
 	"./public/favicon.ico",
 ];
 
