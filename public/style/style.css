@@ -162,7 +162,7 @@ ul {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background-color: #6e6e6e95;
+    background-color: #555555;
     border-radius: 5px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     position: absolute;
@@ -182,7 +182,7 @@ ul {
     margin: 0;
 }
 
-.hidden {
+.idden {
     display: none !important;
 }
 
