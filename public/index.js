@@ -15,7 +15,6 @@ const bookOptions = document.querySelector('.book-options');
 const urls = await getUrls(hadithCollectionUrl);
 createOptionsList(urls);
 
-console.log(urls);
 const hadithDisplay = document.getElementById("hadith")
 const nextHadithBtn = document.querySelector(".next-hadith")
 const prevHadithBtn = document.querySelector(".prev-hadith")
@@ -71,6 +70,7 @@ async function getUrls(collectionUrl) {
                 if (c.language === "English") urls[key].en = c.link;
             }
         }
+        localStorage.setItem("urls", JSON.stringify(urls))
         return urls;
     }
 
@@ -87,27 +87,18 @@ function createOptionsList(urls) {
 }
 
 async function updateHadiths(currentBook, state) {
-    const result = await getHadithArrays(currentBook);
-    state.hadiths = result[0];
-    state.hadithsNoTashkil = result[1];
-    displayHadithTitles();
+    state.hadiths = await getDatafromAPI(urls[currentBook].ar);
+    state.hadithsNoTashkil = extractHadithNoTashkil(state.hadiths);
+    displayHadithTitles(state.hadithsNoTashkil);
     displayHadith();
 }
 
-async function getHadithArrays(currentBook) {
-    return extractHadithFromData(await getDatafromAPI(urls[currentBook].ar));
-}
-
-function extractHadithFromData(data) {
-    const hadithData = data?.hadiths;
-    const hadithsArr = [];
+function extractHadithNoTashkil(hadithArr) {
     const hadithsNoTashkil = [];
-    for (const h of hadithData) {
-        const text = h.text.replaceAll("<br>", "");
-        hadithsArr.push(text);
-        hadithsNoTashkil.push(removeTashkeel(text));
+    for (const hadithText of hadithArr) {
+        hadithsNoTashkil.push(removeTashkeel(hadithText));
     }
-    return [hadithsArr, hadithsNoTashkil];
+    return hadithsNoTashkil;
 }
 
 async function getDatafromAPI(url) {
@@ -132,8 +123,6 @@ function removeTashkeel(text) {
     const tashkeelRegex = /[\u0617-\u061A\u064B-\u0652]/g;
     return text.replace(tashkeelRegex, '');
 }
-
-
 
 function displayHadith() {
     const hadithsToDisplay = tashkilOn ? state.hadiths : state.hadithsNoTashkil;
@@ -169,9 +158,9 @@ function setHadith(newValue) {
     currentHadith = parseInt(newValue);
 }
 
-function displayHadithTitles() {
+function displayHadithTitles(hadiths) {
     const titles = [];
-    for (const [i, h] of state.hadithsNoTashkil.entries()) {
+    for (const [i, h] of hadiths.entries()) {
         let start = h.indexOf("\"") + 1 || h.indexOf(":") + 1 || h.indexOf("سلم ") + 3;
         const title = h.slice(start, start + 20).split(" ").splice(0, 4).join(" ");
         const newTitle = document.createElement('li');
