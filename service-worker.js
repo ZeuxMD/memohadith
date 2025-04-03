@@ -6,7 +6,7 @@ function debugLog(...args) {
 	}
 }
 
-const CACHE_NAME = "my-pwa-cache-v2.1";
+const CACHE_NAME = "my-pwa-cache-v2.2";
 const urlsToCache = [
 	"./",
 	"./index.html",
@@ -125,6 +125,11 @@ self.addEventListener("fetch", (event) => {
 	}
 });
 
+function removeTashkeel(text) {
+	const tashkeelRegex = /[\u0617-\u061A\u064B-\u0652]/g;
+	return text.replace(tashkeelRegex, '');
+}
+
 // for static api requests (api's that don't update and return the same data)
 async function handleStaticApiRequest(request) {
 	try {
@@ -142,7 +147,18 @@ async function handleStaticApiRequest(request) {
 			// NOTE: this will need to be changed if you use another api
 			let hadiths;
 			if (jsonData.hadiths) {
-				hadiths = jsonData.hadiths.map(hadith => hadith.text.replaceAll("<br>", ""));
+				hadiths = jsonData.hadiths.map((hadithInstance) => {
+
+					const hadith = hadithInstance.text.replaceAll("<br>", "");
+					const hadithNoTashkil = removeTashkeel(hadith);
+					let start = hadithNoTashkil.indexOf("\"") + 1 || hadithNoTashkil.indexOf(":") + 1 || hadithNoTashkil.indexOf("سلم ") + 3;
+					const title = hadithNoTashkil.slice(start, start + 20).split(" ").splice(0, 4).join(" ");
+					return {
+						hadith: hadith,
+						title: title,
+					}
+
+				});
 				await saveToIndexedDB("api-data", request.url, hadiths);
 				return new Response(JSON.stringify(hadiths), { status: 200, headers: { "Content-Type": "application/json" } })
 			}

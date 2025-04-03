@@ -20,7 +20,7 @@ const listBtn = document.querySelector(".list-btn");
 const list = document.querySelector(".list");
 const listItems = document.querySelector(".list-items");
 const toggleTashkilBtn = document.getElementById('toggleTashkil');
-let userData = JSON.parse(localStorage.getItem('userData') ?? "");
+let userData = JSON.parse(localStorage.getItem('userData') ?? "{}");
 let hadiths;
 let tashkilOn;
 let currentHadith;
@@ -83,18 +83,18 @@ async function updateHadiths(currentBook) {
     let hadithsTemp;
     if (jsonData.hadiths) {
         hadithsTemp = jsonData.hadiths.map((hadithInstance) => {
-            const hadith = hadithInstance.text;
-            let start = hadith.indexOf("\"") + 1 || hadith.indexOf(":") + 1 || hadith.indexOf("سلم ") + 3;
-            const title = hadith.slice(start, start + 20).split(" ").splice(0, 4).join(" ");
+            const hadith = hadithInstance.text.replaceAll("<br>", "");
+            const hadithNoTashkil = removeTashkeel(hadith);
+            let start = hadithNoTashkil.indexOf("\"") + 1 || hadithNoTashkil.indexOf(":") + 1 || hadithNoTashkil.indexOf("سلم ") + 3;
+            const title = hadithNoTashkil.slice(start, start + 20).split(" ").splice(0, 4).join(" ");
             return {
-                hadith: hadith.replaceAll("<br>", ""),
+                hadith: hadith,
                 title: title,
             };
         });
     }
-    hadiths = hadiths ?? jsonData;
+    hadiths = hadithsTemp ?? jsonData;
     displayHadith();
-    //TODO: instead of computing all hadith titles on every request, just create the hadith titles on the first request and add it to the object and in the cache
     setTimeout(() => displayHadithTitles(hadiths), 0);
 }
 function displayHadithTitles(hadiths) {
@@ -106,13 +106,6 @@ function displayHadithTitles(hadiths) {
         newTitle.dataset.index = i + "";
         listItems?.appendChild(newTitle);
     }
-}
-function extractHadithNoTashkil(hadithArr) {
-    const hadithsNoTashkil = [];
-    for (const hadith of hadithArr) {
-        hadithsNoTashkil.push(removeTashkeel(hadith.hadith));
-    }
-    return hadithsNoTashkil;
 }
 function removeTashkeel(text) {
     const tashkeelRegex = /[\u0617-\u061A\u064B-\u0652]/g;
