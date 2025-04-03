@@ -16,6 +16,7 @@ const urls = await getUrls(hadithCollectionUrl);
 createOptionsList(urls);
 
 const hadithDisplay = document.getElementById("hadith")
+const hadithContainer = document.querySelector(".hadith-container")
 const nextHadithBtn = document.querySelector(".next-hadith")
 const prevHadithBtn = document.querySelector(".prev-hadith")
 const listBtn = document.querySelector(".list-btn")
@@ -133,6 +134,9 @@ function removeTashkeel(text) {
 function displayHadith() {
     const hadithsToDisplay = tashkilOn ? state.hadiths : state.hadithsNoTashkil;
     hadithDisplay.textContent = `${currentHadith + 1}- ${hadithsToDisplay[currentHadith]}`;
+    hadithContainer.scrollTo({
+        top: 0,
+    });
 
     localStorage.setItem('userData', JSON.stringify({
         ...userData,

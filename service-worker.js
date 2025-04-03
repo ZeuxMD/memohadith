@@ -6,15 +6,16 @@ function debugLog(...args) {
 	}
 }
 
-const CACHE_NAME = "my-pwa-cache-v2";
+const CACHE_NAME = "my-pwa-cache-v2.1";
 const urlsToCache = [
 	"./",
 	"./index.html",
 	"./public/style/style.css",
 	"./public/style/normalize.css",
 	"./public/index.js",
-	"./public/images/2.jpg",
+	"./public/images/mosque.webp",
 	"./public/images/192.png",
+	"./public/images/512.png",
 	"./public/favicon.ico",
 ];
 
