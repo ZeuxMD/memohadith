@@ -96,8 +96,9 @@ async function updateHadiths(currentBook, state) {
     }
     state.hadiths = hadiths ?? jsonData;
     state.hadithsNoTashkil = extractHadithNoTashkil(state.hadiths);
-    displayHadithTitles(state.hadithsNoTashkil);
     displayHadith();
+    list.classList.remove('active');
+    displayHadithTitles(state.hadithsNoTashkil);
 }
 
 function extractHadithNoTashkil(hadithArr) {
@@ -421,12 +422,15 @@ bookOptions.addEventListener("change", async function(e) {
 
 let deferredPrompt;
 const pwaPopup = document.getElementById("pwa-install");
+const denyPwa = localStorage.getItem("deny-pwa");
 
-window.addEventListener("beforeinstallprompt", (event) => {
-    event.preventDefault();
-    deferredPrompt = event;
-    pwaPopup.classList.remove("hidden");
-});
+if (denyPwa !== "true") {
+    window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        deferredPrompt = event;
+        pwaPopup.classList.remove("hidden");
+    });
+}
 
 document.getElementById("accept-pwa").addEventListener("click", () => {
     if (deferredPrompt) {
@@ -443,6 +447,7 @@ document.getElementById("accept-pwa").addEventListener("click", () => {
 
 document.getElementById("deny-pwa").addEventListener("click", () => {
     pwaPopup.classList.add("hidden");
+    localStorage.setItem("deny-pwa", "true")
 });
 
 // ------------ Standalone code ----------------
