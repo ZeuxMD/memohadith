@@ -47,8 +47,8 @@ main {
 
 .hadith-container {
     margin-top: 50px;
-    height: 400px;
-    min-height: 100px;
+    height: 350px;
+    min-height: 200px;
     padding-left: 5px;
     overflow-y: scroll;
     border-radius: 10px;
@@ -72,9 +72,8 @@ main {
     padding-left: 10px;
     padding-right: 5px;
     padding-bottom: 10px;
-    transition: 0.3s;
+    transition: 0.1s linear;
     z-index: 1000;
-    transition: all ease-int 0.3s;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -120,12 +119,6 @@ ul {
 
 .list-item:hover {
     color: darkblue;
-}
-
-.list-ite:hover::after {
-    content: "»";
-    position: absolute;
-    left: 5px;
 }
 
 .test-window {
@@ -278,6 +271,7 @@ button {
     border-radius: 6px;
     background-color: #00437e8f;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
 }
 
 select {
@@ -286,6 +280,11 @@ select {
     width: 200px;
     border-radius: 6px;
     border: 1px;
+}
+
+select:focus {
+    border: none;
+    outline: none;
 }
 
 /* This is for the ugly scrollbar in chrome-based browsers */
