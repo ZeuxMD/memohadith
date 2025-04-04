@@ -21,6 +21,7 @@ const list = document.querySelector(".list");
 const listItems = document.querySelector(".list-items");
 const toggleTashkilBtn = document.getElementById('toggleTashkil');
 let userData = JSON.parse(localStorage.getItem('userData') ?? "{}");
+const hadithBooks = {};
 let hadiths;
 let tashkilOn;
 let currentHadith;
@@ -67,32 +68,40 @@ function createOptionsList(urls) {
 async function getDatafromAPI(url) {
     return fetch(url)
         .then(response => {
-            if (!response.ok) {
-                throw new Error(`Failed to fetch data. Status code: ${response.status}`);
-            }
-            return response.json();
-        })
+        if (!response.ok) {
+            throw new Error(`Failed to fetch data. Status code: ${response.status}`);
+        }
+        return response.json();
+    })
         .catch(error => {
-            console.error("Error fetching data:", error);
-        });
+        console.error("Error fetching data:", error);
+    });
+}
+async function getHadithDatafromAPI(hadithUrl) {
+    return getDatafromAPI(hadithUrl)
+        .then(hadithData => {
+        // handle fetching before service worker is installed (i'll make it look better later.. i think)
+        let hadithsTemp;
+        if (hadithData.hadiths) {
+            hadithsTemp = hadithData.hadiths.map((hadithInstance) => {
+                const hadith = hadithInstance.text.replaceAll("<br>", "");
+                const hadithNoTashkil = removeTashkeel(hadith);
+                let start = hadithNoTashkil.indexOf("\"") + 1 || hadithNoTashkil.indexOf(":") + 1 || hadithNoTashkil.indexOf("سلم ") + 3;
+                const title = hadithNoTashkil.slice(start, start + 20).split(" ").splice(0, 4).join(" ");
+                return {
+                    hadith: hadith,
+                    title: title,
+                };
+            });
+        }
+        return hadithsTemp ?? hadithData;
+    });
 }
 async function updateHadiths(currentBook) {
-    const jsonData = await getDatafromAPI(urls[currentBook].ar);
-    // handle fetching before service worker is installed (i'll make it look better later.. i think)
-    let hadithsTemp;
-    if (jsonData.hadiths) {
-        hadithsTemp = jsonData.hadiths.map((hadithInstance) => {
-            const hadith = hadithInstance.text.replaceAll("<br>", "");
-            const hadithNoTashkil = removeTashkeel(hadith);
-            let start = hadithNoTashkil.indexOf("\"") + 1 || hadithNoTashkil.indexOf(":") + 1 || hadithNoTashkil.indexOf("سلم ") + 3;
-            const title = hadithNoTashkil.slice(start, start + 20).split(" ").splice(0, 4).join(" ");
-            return {
-                hadith: hadith,
-                title: title,
-            };
-        });
-    }
-    hadiths = hadithsTemp ?? jsonData;
+    // The browser loads all hadithBooks when Idle, now when you want a hadith array it's just there, no need to fetch everytime from api or indexedDB even!
+    // If it didn't load hadithBooks yet, then it is probably the first load.
+    hadiths = hadithBooks[currentBook] ?? await getHadithDatafromAPI(urls[currentBook].ar);
+    ;
     displayHadith();
     processTitlesChunked(hadiths, 100);
 }
@@ -101,6 +110,7 @@ function processTitlesChunked(array, chunkSize) {
     let index = 0;
     function processNextChunk() {
         if (index >= array.length) {
+            console.log("All titles created!");
             return;
         }
         const start = performance.now();
@@ -165,36 +175,36 @@ function setHadith(newValue) {
     currentHadith = parseInt(newValue);
 }
 // ------------ Event listeners ----------------
-nextHadithBtn?.addEventListener('click', function() {
+nextHadithBtn?.addEventListener('click', function () {
     nextHadith();
 });
-prevHadithBtn?.addEventListener('click', function() {
+prevHadithBtn?.addEventListener('click', function () {
     prevHadith();
 });
-const handleClickOutsideList = function(e) {
+const handleClickOutsideList = function (e) {
     const target = e.target;
     if (!list?.contains(target)) {
         list?.classList.remove('active');
         document.removeEventListener('click', handleClickOutsideList);
     }
 };
-listBtn?.addEventListener('click', function(e) {
+listBtn?.addEventListener('click', function (e) {
     e.stopPropagation();
     list?.classList.toggle('active');
     document.addEventListener('click', handleClickOutsideList);
 });
-list?.addEventListener('click', function(e) {
+list?.addEventListener('click', function (e) {
     const target = e.target;
     if (target?.dataset.index) {
         setHadith(target.dataset.index);
         displayHadith();
     }
 });
-toggleTashkilBtn?.addEventListener("change", function() {
+toggleTashkilBtn?.addEventListener("change", function () {
     tashkilOn = !tashkilOn;
     displayHadith();
 });
-bookOptions?.addEventListener("change", async function(e) {
+bookOptions?.addEventListener("change", async function (e) {
     const target = e.target;
     currentBook = target.value;
     currentHadith = 0;
@@ -234,4 +244,14 @@ localStorage.setItem('userData', JSON.stringify({
     tashkilOn: tashkilOn,
     visits: visits,
 }));
-export { };
+// Load all books when the browser is idle >:)
+requestIdleCallback(() => {
+    for (const bookName in urls) {
+        getHadithDatafromAPI(urls[bookName].ar)
+            .then(response => {
+            hadithBooks[bookName] = response;
+        })
+            .catch(error => console.log("error: ", error));
+    }
+});
+export {};
