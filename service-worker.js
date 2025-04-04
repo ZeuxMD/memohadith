@@ -9,7 +9,7 @@ function debugLog(...args) {
 	}
 }
 
-const CACHE_NAME = "my-pwa-cache-v2.4";
+const CACHE_NAME = "my-pwa-cache-v2.5";
 const urlsToCache = [
 	"./",
 	"./index.html",
