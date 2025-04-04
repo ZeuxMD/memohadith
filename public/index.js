@@ -198,6 +198,7 @@ list?.addEventListener('click', function (e) {
     if (target?.dataset.index) {
         setHadith(target.dataset.index);
         displayHadith();
+        list?.classList.remove('active');
     }
 });
 toggleTashkilBtn?.addEventListener("change", function () {
