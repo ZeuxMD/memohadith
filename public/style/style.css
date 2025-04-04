@@ -8,8 +8,14 @@ body {
     height: 100vh;
     background: url(../images/mosque.webp) no-repeat scroll center top transparent;
     background-size: auto 100%;
+    background-color: black;
     color: white;
     font-size: 1.5rem;
+    line-height: 1.6;
+}
+
+body>* {
+    z-index: 1;
 }
 
 main {
@@ -27,7 +33,6 @@ main {
     background-color: rgba(0, 0, 0, 0.8);
     height: 100svh;
     height: 100vh;
-    z-index: -1;
     pointer-events: none;
     mix-blend-mode: multiply;
 }
@@ -41,7 +46,10 @@ main {
 }
 
 .hadith-container {
-    max-height: 300px;
+    margin-top: 50px;
+    height: 400px;
+    min-height: 100px;
+    padding-left: 5px;
     overflow-y: scroll;
     border-radius: 10px;
     background-color: #00000070;
@@ -264,11 +272,11 @@ input:checked+.slider:before {
 }
 
 button {
-    padding: 10px;
+    padding: 13px;
     color: white;
     border: none;
     border-radius: 6px;
-    background-color: #00549d90;
+    background-color: #00437e8f;
     cursor: pointer;
 }
 

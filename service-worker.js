@@ -1,3 +1,6 @@
+// import pako for compression
+importScripts('https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js');
+
 // set to true to log all IndexedDB events
 const DEBUG = false;
 function debugLog(...args) {
@@ -6,7 +9,7 @@ function debugLog(...args) {
 	}
 }
 
-const CACHE_NAME = "my-pwa-cache-v2.2";
+const CACHE_NAME = "my-pwa-cache-v2.3";
 const urlsToCache = [
 	"./",
 	"./index.html",
@@ -15,7 +18,6 @@ const urlsToCache = [
 	"./public/index.js",
 	"./public/images/mosque.webp",
 	"./public/images/192.png",
-	"./public/images/512.png",
 	"./public/favicon.ico",
 ];
 
@@ -130,12 +132,19 @@ function removeTashkeel(text) {
 	return text.replace(tashkeelRegex, '');
 }
 
+// performance tests
+//const start = performance.now();
+//const end = performance.now();
+//const time = end - start;
+//console.log("Time taken: ", time)
+
 // for static api requests (api's that don't update and return the same data)
 async function handleStaticApiRequest(request) {
 	try {
 		// Try IndexedDB first
-		const cachedData = await getFromIndexedDB("api-data", request.url);
-		return new Response(JSON.stringify(cachedData), {
+		const cachedData = await retrieveAndDecompress("api-data", request.url)
+
+		return new Response(cachedData, {
 			headers: { "Content-Type": "application/json" },
 		});
 	} catch (dbError) {
@@ -159,12 +168,13 @@ async function handleStaticApiRequest(request) {
 					}
 
 				});
-				await saveToIndexedDB("api-data", request.url, hadiths);
+
+				await compressAndStore("api-data", request.url, hadiths);
 				return new Response(JSON.stringify(hadiths), { status: 200, headers: { "Content-Type": "application/json" } })
 			}
 
 			// Store in IndexedDB
-			await saveToIndexedDB("api-data", request.url, jsonData);
+			await compressAndStore("api-data", request.url, jsonData);
 			return networkResponse;
 		} catch (networkError) {
 			// Completely offline with no cached data
@@ -292,5 +302,70 @@ function getFromIndexedDB(storeName, key) {
 			debugLog('Error opening database for get:', event.target.error);
 			reject(event.target.error);
 		};
+	});
+}
+
+async function compressAndStore(storeName, key, data) {
+	return new Promise((resolve, reject) => {
+		try {
+			// 1. Serialize
+			const jsonString = JSON.stringify(data);
+
+			// 2. Compress
+			const compressedData = pako.deflate(jsonString, { to: "string" });
+
+			debugLog("Data compressed successfully");
+
+			saveToIndexedDB(storeName, key, compressedData)
+				.then(() => {
+					debugLog("Compressed data saved successfully");
+					resolve();
+				})
+				.catch(err => {
+					debugLog("Error saving compressed data:", err);
+					// If saving compressed data fails, attempt to save uncompressed
+					debugLog("Attempting to save uncompressed data instead");
+					saveToIndexedDB(storeName, key, data)
+						.then(() => {
+							debugLog("Uncompressed data saved successfully");
+							resolve(); // Resolve the promise when the uncompressed data is saved
+						})
+						.catch(err2 => {
+							debugLog("Error saving uncompressed data:", err2);
+							reject(err2); // Reject the promise if both save attempts fail
+						});
+				});
+
+		} catch (error) {
+			console.error("Error during compression and encoding:", error);
+			debugLog("Compression failed, attempting to save uncompressed data");
+			saveToIndexedDB(storeName, key, data)
+				.then(() => {
+					debugLog("Uncompressed data saved successfully");
+					resolve(); // Resolve the promise when the uncompressed data is saved
+				})
+				.catch(err => {
+					debugLog("Error saving uncompressed data:", err);
+					reject(err); // Reject the promise if saving uncompressed data also fails
+				});
+		}
+	});
+}
+
+async function retrieveAndDecompress(storeName, key) {
+	return new Promise((resolve, reject) => {
+		getFromIndexedDB(storeName, key)
+			.then(compressedData => {
+				try {
+					// Decompress
+					const data = pako.inflate(compressedData, { to: 'string' });
+					resolve(data);
+				} catch (error) {
+					console.error("Error during decompression and decoding:", error);
+					resolve(compressedData)
+					reject(error);
+				}
+			})
+			.catch(reject);
 	});
 }

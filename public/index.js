@@ -67,15 +67,14 @@ function createOptionsList(urls) {
 async function getDatafromAPI(url) {
     return fetch(url)
         .then(response => {
-        if (!response.ok) {
-            throw new Error(`Failed to fetch data. Status code: ${response.status}`);
-        }
-        return response.json();
-    })
-        .then(data => data)
+            if (!response.ok) {
+                throw new Error(`Failed to fetch data. Status code: ${response.status}`);
+            }
+            return response.json();
+        })
         .catch(error => {
-        console.error("Error fetching data:", error);
-    });
+            console.error("Error fetching data:", error);
+        });
 }
 async function updateHadiths(currentBook) {
     const jsonData = await getDatafromAPI(urls[currentBook].ar);
@@ -95,17 +94,41 @@ async function updateHadiths(currentBook) {
     }
     hadiths = hadithsTemp ?? jsonData;
     displayHadith();
-    setTimeout(() => displayHadithTitles(hadiths), 0);
+    processTitlesChunked(hadiths, 100);
 }
-function displayHadithTitles(hadiths) {
+function processTitlesChunked(array, chunkSize) {
     listItems?.replaceChildren();
-    for (const [i, hadith] of hadiths.entries()) {
+    let index = 0;
+    function processNextChunk() {
+        if (index >= array.length) {
+            return;
+        }
+        const start = performance.now();
+        displayHadithTitles(array, index, chunkSize);
+        index += chunkSize;
+        const end = performance.now();
+        const timeTaken = end - start;
+        // adjust chunk size based on performance (alas, chunking is not the bottleneck, it is the indexedDB fetching)
+        if (timeTaken < 5)
+            chunkSize *= 2;
+        else if (timeTaken > 20)
+            chunkSize = Math.max(50, chunkSize / 1.5);
+        setTimeout(processNextChunk, 0);
+    }
+    processNextChunk();
+}
+function displayHadithTitles(hadiths, chunkIndex, chunkSize) {
+    // Batch DOM updates
+    const fragment = document.createDocumentFragment();
+    const chunkEnd = Math.min(chunkIndex + chunkSize, hadiths.length);
+    for (let i = chunkIndex; i < chunkEnd; i++) {
         const newTitle = document.createElement('li');
         newTitle.className = 'list-item';
-        newTitle.innerText = (i + 1) + ". " + hadith.title + "..";
+        newTitle.innerText = (i + 1) + ". " + hadiths[i].title + "..";
         newTitle.dataset.index = i + "";
-        listItems?.appendChild(newTitle);
+        fragment.appendChild(newTitle);
     }
+    listItems?.appendChild(fragment); // append all at once to reduce repaints
 }
 function removeTashkeel(text) {
     const tashkeelRegex = /[\u0617-\u061A\u064B-\u0652]/g;
@@ -142,36 +165,36 @@ function setHadith(newValue) {
     currentHadith = parseInt(newValue);
 }
 // ------------ Event listeners ----------------
-nextHadithBtn?.addEventListener('click', function () {
+nextHadithBtn?.addEventListener('click', function() {
     nextHadith();
 });
-prevHadithBtn?.addEventListener('click', function () {
+prevHadithBtn?.addEventListener('click', function() {
     prevHadith();
 });
-const handleClickOutsideList = function (e) {
+const handleClickOutsideList = function(e) {
     const target = e.target;
     if (!list?.contains(target)) {
         list?.classList.remove('active');
         document.removeEventListener('click', handleClickOutsideList);
     }
 };
-listBtn?.addEventListener('click', function (e) {
+listBtn?.addEventListener('click', function(e) {
     e.stopPropagation();
     list?.classList.toggle('active');
     document.addEventListener('click', handleClickOutsideList);
 });
-list?.addEventListener('click', function (e) {
+list?.addEventListener('click', function(e) {
     const target = e.target;
     if (target?.dataset.index) {
         setHadith(target.dataset.index);
         displayHadith();
     }
 });
-toggleTashkilBtn?.addEventListener("change", function () {
+toggleTashkilBtn?.addEventListener("change", function() {
     tashkilOn = !tashkilOn;
     displayHadith();
 });
-bookOptions?.addEventListener("change", async function (e) {
+bookOptions?.addEventListener("change", async function(e) {
     const target = e.target;
     currentBook = target.value;
     currentHadith = 0;
@@ -211,4 +234,4 @@ localStorage.setItem('userData', JSON.stringify({
     tashkilOn: tashkilOn,
     visits: visits,
 }));
-export {};
+export { };
