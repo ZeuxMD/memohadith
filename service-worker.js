@@ -9,7 +9,10 @@ function debugLog(...args) {
 	}
 }
 
-const CACHE_NAME = "my-pwa-cache-v2.5";
+const CACHE_NAME = "my-pwa-cache-v2.6";
+const DB_VERSION = 2;
+const DB_NAME = "my-database";
+const OBJECT_STORE_NAME = "api-data";
 const urlsToCache = [
 	"./",
 	"./index.html",
@@ -30,14 +33,23 @@ initializeIndexedDB().catch(err => {
 function initializeIndexedDB() {
 	return new Promise((resolve, reject) => {
 		debugLog('Initializing IndexedDB...');
-		const request = indexedDB.open("my-database", 1);
+		const request = indexedDB.open(DB_NAME, DB_VERSION);
 
 		request.onupgradeneeded = event => {
 			debugLog('Database upgrade needed, creating object stores');
 			const db = event.target.result;
-			if (!db.objectStoreNames.contains("api-data")) {
-				db.createObjectStore("api-data");
-				debugLog('Created "api-data" object store');
+			if (event.oldVersion < 1) {
+				if (!db.objectStoreNames.contains(OBJECT_STORE_NAME)) {
+					db.createObjectStore(OBJECT_STORE_NAME);
+					debugLog(`Created ${OBJECT_STORE_NAME} object store`);
+				}
+			} else {
+				if (db.objectStoreNames.contains(OBJECT_STORE_NAME)) {
+					db.deleteObjectStore(OBJECT_STORE_NAME);
+					debugLog(`Deleted "${OBJECT_STORE_NAME}" object store`)
+				}
+				db.createObjectStore(OBJECT_STORE_NAME);
+				debugLog(`Recreated "${OBJECT_STORE_NAME}" object store`)
 			}
 		};
 
@@ -142,7 +154,7 @@ function removeTashkeel(text) {
 async function handleStaticApiRequest(request) {
 	try {
 		// Try IndexedDB first
-		const cachedData = await retrieveAndDecompress("api-data", request.url)
+		const cachedData = await retrieveAndDecompress(OBJECT_STORE_NAME, request.url)
 
 		return new Response(cachedData, {
 			headers: { "Content-Type": "application/json" },
@@ -156,25 +168,13 @@ async function handleStaticApiRequest(request) {
 			// NOTE: this will need to be changed if you use another api
 			let hadiths;
 			if (jsonData.hadiths) {
-				hadiths = jsonData.hadiths.map((hadithInstance) => {
-
-					const hadith = hadithInstance.text.replaceAll("<br>", "");
-					const hadithNoTashkil = removeTashkeel(hadith);
-					let start = hadithNoTashkil.indexOf("\"") + 1 || hadithNoTashkil.indexOf(":") + 1 || hadithNoTashkil.indexOf("سلم ") + 3;
-					const title = hadithNoTashkil.slice(start, start + 20).split(" ").splice(0, 4).join(" ");
-					return {
-						hadith: hadith,
-						title: title,
-					}
-
-				});
-
-				await compressAndStore("api-data", request.url, hadiths);
+				hadiths = jsonData.hadiths.map((hadithInstance) => hadithInstance.text.replaceAll("<br>", ""));
+				await compressAndStore(OBJECT_STORE_NAME, request.url, hadiths);
 				return new Response(JSON.stringify(hadiths), { status: 200, headers: { "Content-Type": "application/json" } })
 			}
 
 			// Store in IndexedDB
-			await compressAndStore("api-data", request.url, jsonData);
+			await compressAndStore(OBJECT_STORE_NAME, request.url, jsonData);
 			return networkResponse;
 		} catch (networkError) {
 			// Completely offline with no cached data
@@ -191,7 +191,7 @@ async function handleStaticApiRequest(request) {
 function saveToIndexedDB(storeName, key, data) {
 	return new Promise((resolve, reject) => {
 		debugLog('Opening database for save operation:', storeName, key);
-		const request = indexedDB.open("my-database", 1);
+		const request = indexedDB.open(DB_NAME, DB_VERSION);
 
 		request.onupgradeneeded = event => {
 			debugLog('Upgrade needed during save operation');
@@ -250,7 +250,7 @@ function saveToIndexedDB(storeName, key, data) {
 function getFromIndexedDB(storeName, key) {
 	return new Promise((resolve, reject) => {
 		debugLog('Opening database for get operation:', storeName, key);
-		const request = indexedDB.open("my-database", 1);
+		const request = indexedDB.open(DB_NAME, DB_VERSION);
 
 		request.onsuccess = (event) => {
 			const db = event.target.result;

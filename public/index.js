@@ -1,3 +1,4 @@
+//TODO: add english translations
 const hadithCollectionUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions.json";
 // List of the books I want
 const arBookNames = new Map();
@@ -12,7 +13,6 @@ arBookNames.set("tirmidhi", "جامع الترمذي");
 const bookOptions = document.querySelector('.book-options');
 const urls = await getUrls(hadithCollectionUrl);
 createOptionsList(urls);
-const mainEl = document.querySelector("main");
 const hadithDisplay = document.getElementById("hadith");
 const hadithContainer = document.querySelector(".hadith-container");
 const nextHadithBtn = document.querySelector(".next-hadith");
@@ -84,16 +84,7 @@ async function getHadithDatafromAPI(hadithUrl) {
         // handle fetching before service worker is installed (i'll make it look better later.. i think)
         let hadithsTemp;
         if (hadithData.hadiths) {
-            hadithsTemp = hadithData.hadiths.map((hadithInstance) => {
-                const hadith = hadithInstance.text.replaceAll("<br>", "");
-                const hadithNoTashkil = removeTashkeel(hadith);
-                let start = hadithNoTashkil.indexOf("\"") + 1 || hadithNoTashkil.indexOf(":") + 1 || hadithNoTashkil.indexOf("سلم ") + 3;
-                const title = hadithNoTashkil.slice(start, start + 20).split(" ").splice(0, 4).join(" ");
-                return {
-                    hadith: hadith,
-                    title: title,
-                };
-            });
+            hadithsTemp = hadithData.hadiths.map((hadithInstance) => hadithInstance.text.replaceAll("<br>", ""));
         }
         return hadithsTemp ?? hadithData;
     });
@@ -133,9 +124,12 @@ function displayHadithTitles(hadiths, chunkIndex, chunkSize) {
     const fragment = document.createDocumentFragment();
     const chunkEnd = Math.min(chunkIndex + chunkSize, hadiths.length);
     for (let i = chunkIndex; i < chunkEnd; i++) {
+        const hadith = hadiths[i];
+        let start = hadith.indexOf("\"") + 1 || hadith.indexOf(":") + 1 || hadith.indexOf("سلم ") + 3;
+        const title = removeTashkeel(hadith.slice(start, start + 40).split(" ").splice(0, 4).join(" "));
         const newTitle = document.createElement('li');
         newTitle.className = 'list-item';
-        newTitle.innerText = (i + 1) + ". " + hadiths[i].title + "..";
+        newTitle.innerText = (i + 1) + ". " + title + "..";
         newTitle.dataset.index = i + "";
         fragment.appendChild(newTitle);
     }
@@ -146,8 +140,7 @@ function removeTashkeel(text) {
     return text.replace(tashkeelRegex, '');
 }
 function displayHadith() {
-    const currHadith = hadiths[currentHadith].hadith;
-    const hadithToDisplay = tashkilOn ? currHadith : removeTashkeel(currHadith);
+    const hadithToDisplay = tashkilOn ? hadiths[currentHadith] : removeTashkeel(hadiths[currentHadith]);
     hadithDisplay.textContent = `${currentHadith + 1}- ${hadithToDisplay}`;
     hadithContainer.scrollTo({
         top: 0,
