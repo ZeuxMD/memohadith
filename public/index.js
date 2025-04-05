@@ -12,6 +12,7 @@ arBookNames.set("tirmidhi", "جامع الترمذي");
 const bookOptions = document.querySelector('.book-options');
 const urls = await getUrls(hadithCollectionUrl);
 createOptionsList(urls);
+const mainEl = document.querySelector("main");
 const hadithDisplay = document.getElementById("hadith");
 const hadithContainer = document.querySelector(".hadith-container");
 const nextHadithBtn = document.querySelector(".next-hadith");
@@ -180,6 +181,40 @@ nextHadithBtn?.addEventListener('click', function () {
 });
 prevHadithBtn?.addEventListener('click', function () {
     prevHadith();
+});
+const maxSwipeTime = 500;
+const minSwipeDistance = 50;
+let pointerstartX = 0;
+let pointerendX = 0;
+let startTime = 0;
+function checkSwipeDirection(rCallback, lCallback) {
+    const distance = Math.abs(pointerendX - pointerstartX);
+    const timeTaken = Date.now() - startTime;
+    if (distance < minSwipeDistance || timeTaken > maxSwipeTime)
+        return;
+    if (pointerendX < pointerstartX) {
+        lCallback();
+    }
+    else if (pointerendX > pointerstartX) {
+        rCallback();
+    }
+}
+document.addEventListener('touchstart', function (e) {
+    pointerstartX = e.changedTouches[0].screenX;
+    startTime = Date.now();
+});
+document.addEventListener('touchend', function (e) {
+    pointerendX = e.changedTouches[0].screenX;
+    function handleRightSwipe() {
+        list?.classList.remove("active");
+    }
+    if (!list?.classList.contains("active")) {
+        // list not active, navigate hadith
+        checkSwipeDirection(nextHadith, prevHadith);
+    }
+    else
+        // list active, close list on right swipe, do nothing on left swipe
+        checkSwipeDirection(handleRightSwipe, () => { });
 });
 const handleClickOutsideList = function (e) {
     const target = e.target;

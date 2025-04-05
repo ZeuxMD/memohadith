@@ -66,7 +66,7 @@ main {
     position: fixed;
     right: -300px;
     top: 0;
-    width: 200px;
+    width: 220px;
     height: 100vh;
     overflow-y: auto;
     padding-left: 10px;
@@ -119,44 +119,6 @@ ul {
 
 .list-item:hover {
     color: darkblue;
-}
-
-.test-window {
-    position: absolute;
-    display: none;
-    max-width: 600px;
-    min-width: 260px;
-    height: 500px;
-    min-height: fit-content;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 100;
-    background-color: wheat;
-    color: black;
-    border-radius: 5px;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    overflow-y: hidden;
-}
-
-.test-window.active {
-    display: flex;
-
-}
-
-.question-container {
-    width: 80%;
-    text-align: center;
-}
-
-.close-test {
-    cursor: pointer;
-    position: absolute;
-    top: 5px;
-    right: 5px;
 }
 
 #pwa-install {
@@ -274,15 +236,16 @@ button {
     -webkit-tap-highlight-color: transparent;
 }
 
-select {
+select.book-options {
     background-color: #00649d;
     color: white;
-    width: 200px;
+    width: 220px;
+    padding: 2px;
     border-radius: 6px;
     border: 1px;
 }
 
-select:focus {
+select.book-options:focus {
     border: none;
     outline: none;
 }
