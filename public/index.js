@@ -19,6 +19,10 @@ const nextHadithBtn = document.querySelector(".next-hadith");
 const prevHadithBtn = document.querySelector(".prev-hadith");
 const listBtn = document.querySelector(".list-btn");
 const list = document.querySelector(".list");
+const searchBtn = document.getElementById("search-btn");
+const searchUI = document.querySelector(".search-ui");
+const searchInput = searchUI?.querySelector("input");
+const searchResults = searchUI?.querySelector(".search-results");
 const listItems = document.querySelector(".list-items");
 const toggleTashkilBtn = document.getElementById('toggleTashkil');
 let userData = JSON.parse(localStorage.getItem('userData') ?? "{}");
@@ -139,6 +143,10 @@ function removeTashkeel(text) {
     const tashkeelRegex = /[\u0617-\u061A\u064B-\u0652]/g;
     return text.replace(tashkeelRegex, '');
 }
+function removeTashkeelAndHamza(text) {
+    const alifRegex = /[\u0623\u0625]/g;
+    return removeTashkeel(text).replace(alifRegex, '\u0627');
+}
 function displayHadith() {
     const hadithToDisplay = tashkilOn ? hadiths[currentHadith] : removeTashkeel(hadiths[currentHadith]);
     hadithDisplay.textContent = `${currentHadith + 1}- ${hadithToDisplay}`;
@@ -238,6 +246,82 @@ bookOptions?.addEventListener("change", async function (e) {
     currentBook = target.value;
     currentHadith = 0;
     await updateHadiths(currentBook);
+});
+const handleCloseSearch = function (e) {
+    const target = e.target;
+    // clicked on a result from the search
+    searchResults?.scrollTo({
+        top: 0,
+    });
+    if (searchResults?.contains(target) || target.classList.contains("close-search")) {
+        searchUI?.classList.add('hidden');
+        searchResults?.replaceChildren();
+        hadithsNoTashkil = [];
+        if (searchInput)
+            searchInput.value = "";
+        document.removeEventListener('click', handleCloseSearch);
+    }
+};
+let hadithsNoTashkil;
+function extractHadithNoTashkil(hadiths) {
+    let result = [];
+    for (const hadith of hadiths) {
+        result.push(removeTashkeelAndHamza(hadith));
+    }
+    return result;
+}
+searchBtn?.addEventListener("click", function (e) {
+    e.stopPropagation();
+    searchUI?.classList.remove("hidden");
+    list?.classList.remove("active");
+    searchInput?.focus();
+    setTimeout(() => {
+        hadithsNoTashkil = extractHadithNoTashkil(hadiths);
+    }, 0);
+    document.addEventListener('click', handleCloseSearch);
+});
+searchInput?.addEventListener("input", function (e) {
+    const target = e.target;
+    // clean the search query of any tashkil or hamza for consistency
+    const query = removeTashkeelAndHamza(target.value);
+    // clear search results from previous searches
+    searchResults?.scrollTo({
+        top: 0,
+    });
+    searchResults?.replaceChildren();
+    if (query.length == 0)
+        return;
+    for (const [i, hadith] of hadithsNoTashkil.entries()) {
+        // stop at 100 searches for now
+        if (searchResults?.childNodes?.length > 100)
+            return;
+        if (hadith.includes(query)) {
+            const newResult = document.createElement('li');
+            newResult.className = 'result-item';
+            newResult.innerText = hadith;
+            newResult.dataset.book = currentBook;
+            newResult.dataset.index = i + "";
+            searchResults?.appendChild(newResult);
+            //fragment.appendChild(newResult)
+        }
+    }
+});
+searchResults?.addEventListener("click", function (e) {
+    const target = e.target;
+    if (!target.dataset)
+        return;
+    const targetIndex = target.dataset.index;
+    const targetBook = target.dataset.book;
+    if (!targetIndex || !targetBook)
+        return;
+    currentHadith = parseInt(targetIndex);
+    if (targetBook !== currentBook) {
+        currentBook = targetBook;
+        updateHadiths(currentBook);
+    }
+    else {
+        displayHadith();
+    }
 });
 // PWA installation prompt
 let deferredPrompt;
