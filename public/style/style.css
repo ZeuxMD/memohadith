@@ -214,7 +214,7 @@ ul {
 }
 
 .list-items {
-    margin-top: 20px;
+    margin-block: 20px;
     max-height: 500px;
     height: max-content;
     overflow-y: auto;

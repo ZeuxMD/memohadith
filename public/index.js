@@ -26,8 +26,12 @@ const searchResults = searchUI?.querySelector(".search-results");
 const listItems = document.querySelector(".list-items");
 const toggleTashkilBtn = document.getElementById('toggleTashkil');
 let userData = JSON.parse(localStorage.getItem('userData') ?? "{}");
+const fragment_size = 100;
 const hadithBooks = {};
 let hadiths;
+let currentTitles = [];
+let currentTitleFragment = 0;
+const observer = new IntersectionObserver(observerCallback, { root: listItems, threshold: 0.5 });
 let tashkilOn;
 let currentHadith;
 let currentBook;
@@ -93,37 +97,56 @@ async function getHadithDatafromAPI(hadithUrl) {
         return hadithsTemp ?? hadithData;
     });
 }
+function observerCallback(entries) {
+    for (const entry of entries) {
+        if (!entry.isIntersecting)
+            continue;
+        const target = entry.target;
+        if (target.dataset.downSentry) {
+            observer.unobserve(target);
+            currentTitleFragment++;
+            displayHadithTitles(currentTitleFragment);
+            observeFirstLiSentry(listItems?.firstElementChild);
+        }
+        else if (target.dataset.upSentry && currentTitleFragment > 1) {
+            observer.unobserve(target);
+            removeLastLiFragment();
+            currentTitleFragment--;
+            const newTitles = currentTitles[currentTitleFragment - 1].cloneNode(true);
+            listItems?.insertBefore(newTitles, listItems.firstElementChild);
+            observeFirstLiSentry(listItems?.firstElementChild);
+            observeLastLiSentry(listItems?.lastElementChild);
+        }
+    }
+}
 async function updateHadiths(currentBook) {
     // The browser loads all hadithBooks when Idle, now when you want a hadith array it's just there, no need to fetch everytime from api or indexedDB even!
     // If it didn't load hadithBooks yet, then it is probably the first load.
     hadiths = hadithBooks[currentBook] ?? await getHadithDatafromAPI(urls[currentBook].ar);
     ;
+    currentTitles = [];
     displayHadith();
-    processTitlesChunked(hadiths, 100);
+    processTitlesChunked(hadiths, fragment_size);
 }
 function processTitlesChunked(array, chunkSize) {
     listItems?.replaceChildren();
     let index = 0;
     function processNextChunk() {
         if (index >= array.length) {
-            console.log("All titles created!");
             return;
         }
-        const start = performance.now();
-        displayHadithTitles(array, index, chunkSize);
+        currentTitles.push(createHadithTitles(array, index, chunkSize));
+        if (currentHadith >= index && currentHadith <= index + chunkSize) {
+            currentTitleFragment = getCurrentTitleFragment();
+            displayHadithTitles(currentTitleFragment);
+            observeFirstLiSentry(listItems?.firstElementChild);
+        }
         index += chunkSize;
-        const end = performance.now();
-        const timeTaken = end - start;
-        // adjust chunk size based on performance (alas, chunking is not the bottleneck, it is the indexedDB fetching)
-        if (timeTaken < 5)
-            chunkSize *= 2;
-        else if (timeTaken > 20)
-            chunkSize = Math.max(50, chunkSize / 1.5);
         setTimeout(processNextChunk, 0);
     }
     processNextChunk();
 }
-function displayHadithTitles(hadiths, chunkIndex, chunkSize) {
+function createHadithTitles(hadiths, chunkIndex, chunkSize) {
     // Batch DOM updates
     const fragment = document.createDocumentFragment();
     const chunkEnd = Math.min(chunkIndex + chunkSize, hadiths.length);
@@ -137,15 +160,16 @@ function displayHadithTitles(hadiths, chunkIndex, chunkSize) {
         newTitle.dataset.index = i + "";
         fragment.appendChild(newTitle);
     }
-    listItems?.appendChild(fragment); // append all at once to reduce repaints
+    return fragment;
 }
-function removeTashkeel(text) {
-    const tashkeelRegex = /[\u0617-\u061A\u064B-\u0652]/g;
-    return text.replace(tashkeelRegex, '');
-}
-function removeTashkeelAndHamza(text) {
-    const alifRegex = /[\u0623\u0625]/g;
-    return removeTashkeel(text).replace(alifRegex, '\u0627');
+function displayHadithTitles(titlesFragmentIndex) {
+    if (titlesFragmentIndex >= currentTitles.length)
+        return;
+    const titles = currentTitles[titlesFragmentIndex].cloneNode(true);
+    observeLastLiSentry(titles);
+    if (listItems?.childElementCount >= 200)
+        removeFirstLiFragment();
+    listItems?.appendChild(titles);
 }
 function displayHadith() {
     const hadithToDisplay = tashkilOn ? hadiths[currentHadith] : removeTashkeel(hadiths[currentHadith]);
@@ -175,6 +199,46 @@ function prevHadith() {
 }
 function setHadith(newValue) {
     currentHadith = parseInt(newValue);
+}
+// ----------------- Helper Functions ------------------
+function getCurrentTitleFragment() {
+    return Math.floor(currentHadith / fragment_size);
+}
+function observeLiSentries(fragment) {
+    observeFirstLiSentry(fragment);
+    observeLastLiSentry(fragment);
+}
+function observeFirstLiSentry(fragment) {
+    const firstLiElement = (fragment instanceof DocumentFragment ? fragment.firstElementChild : fragment);
+    firstLiElement.dataset.upSentry = "1";
+    observer.observe(firstLiElement);
+}
+function observeLastLiSentry(fragment) {
+    const lastLiElement = (fragment instanceof DocumentFragment ? fragment.lastElementChild : fragment);
+    lastLiElement.dataset.downSentry = "1";
+    observer.observe(lastLiElement);
+}
+function removeFirstLiFragment() {
+    removeLiFragment(0);
+}
+function removeLastLiFragment() {
+    removeLiFragment(1);
+}
+function removeLiFragment(fragmentIndex) {
+    const allLis = listItems?.querySelectorAll('li');
+    const start = fragmentIndex * 100;
+    const end = start + 100;
+    for (let i = start; i < end && allLis[i]; i++) {
+        allLis[i].remove();
+    }
+}
+function removeTashkeel(text) {
+    const tashkeelRegex = /[\u0617-\u061A\u064B-\u0652]/g;
+    return text.replace(tashkeelRegex, '');
+}
+function removeTashkeelAndHamza(text) {
+    const alifRegex = /[\u0623\u0625]/g;
+    return removeTashkeel(text).replace(alifRegex, '\u0627');
 }
 // ------------ Event listeners ----------------
 nextHadithBtn?.addEventListener('click', function () {
@@ -321,6 +385,10 @@ searchResults?.addEventListener("click", function (e) {
     }
     else {
         displayHadith();
+        currentTitleFragment = getCurrentTitleFragment();
+        const titles = currentTitles[currentTitleFragment].cloneNode(true);
+        observeLiSentries(titles);
+        listItems?.replaceChildren(titles);
     }
 });
 // PWA installation prompt
