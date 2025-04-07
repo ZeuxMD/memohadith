@@ -22,10 +22,13 @@
     <div class="search-ui hidden">
         <button class="close-search">&times;</button>
         <div class="search-input">
-            <input type="text" />
+            <input type="text" placeholder="ابحث عن الحديث بالرقم، النص، أو الراوي" />
             <button class="mobile close-search">&times;</button>
         </div>
-        <ul class="search-results"></ul>
+        <div class="results-container">
+            <p class="result-count">عدد النتائج: <span></span></p>
+            <ul class="search-results"></ul>
+        </div>
     </div>
     <main>
         <div class="hadith-container">

@@ -23,6 +23,7 @@ const searchBtn = document.getElementById("search-btn");
 const searchUI = document.querySelector(".search-ui");
 const searchInput = searchUI?.querySelector("input");
 const searchResults = searchUI?.querySelector(".search-results");
+const resultsCount = document.querySelector(".result-count>span");
 const listItems = document.querySelector(".list-items");
 const toggleTashkilBtn = document.getElementById('toggleTashkil');
 let userData = JSON.parse(localStorage.getItem('userData') ?? "{}");
@@ -126,16 +127,16 @@ async function updateHadiths(currentBook) {
     ;
     currentTitles = [];
     displayHadith();
-    processTitlesChunked(hadiths, fragment_size);
+    processTitlesChunked(fragment_size);
 }
-function processTitlesChunked(array, chunkSize) {
+function processTitlesChunked(chunkSize) {
     listItems?.replaceChildren();
     let index = 0;
     function processNextChunk() {
-        if (index >= array.length) {
+        if (index >= hadiths.length) {
             return;
         }
-        currentTitles.push(createHadithTitles(array, index, chunkSize));
+        currentTitles.push(createHadithTitles(index, chunkSize));
         if (currentHadith >= index && currentHadith <= index + chunkSize) {
             currentTitleFragment = getCurrentTitleFragment();
             displayHadithTitles(currentTitleFragment);
@@ -146,7 +147,7 @@ function processTitlesChunked(array, chunkSize) {
     }
     processNextChunk();
 }
-function createHadithTitles(hadiths, chunkIndex, chunkSize) {
+function createHadithTitles(chunkIndex, chunkSize) {
     // Batch DOM updates
     const fragment = document.createDocumentFragment();
     const chunkEnd = Math.min(chunkIndex + chunkSize, hadiths.length);
@@ -203,6 +204,11 @@ function setHadith(newValue) {
 // ----------------- Helper Functions ------------------
 function getCurrentTitleFragment() {
     return Math.floor(currentHadith / fragment_size);
+}
+function clearTimeouts(ids) {
+    for (const id of ids) {
+        clearTimeout(id);
+    }
 }
 function observeLiSentries(fragment) {
     observeFirstLiSentry(fragment);
@@ -321,6 +327,7 @@ const handleCloseSearch = function (e) {
         searchUI?.classList.add('hidden');
         searchResults?.replaceChildren();
         hadithsNoTashkil = [];
+        resultsCount.innerText = "";
         if (searchInput)
             searchInput.value = "";
         document.removeEventListener('click', handleCloseSearch);
@@ -334,16 +341,20 @@ function extractHadithNoTashkil(hadiths) {
     }
     return result;
 }
+const searchFragmentSize = 50;
+let searchResultsFragments = [];
 searchBtn?.addEventListener("click", function (e) {
     e.stopPropagation();
     searchUI?.classList.remove("hidden");
     list?.classList.remove("active");
     searchInput?.focus();
+    searchResultsFragments = [];
     setTimeout(() => {
         hadithsNoTashkil = extractHadithNoTashkil(hadiths);
     }, 0);
     document.addEventListener('click', handleCloseSearch);
 });
+let timeoutIds = [];
 searchInput?.addEventListener("input", function (e) {
     const target = e.target;
     // clean the search query of any tashkil or hamza for consistency
@@ -352,22 +363,61 @@ searchInput?.addEventListener("input", function (e) {
     searchResults?.scrollTo({
         top: 0,
     });
-    searchResults?.replaceChildren();
-    if (query.length == 0)
+    resultsCount.innerText = "";
+    // clear timeouts from previous searches
+    clearTimeouts(timeoutIds);
+    timeoutIds = [];
+    if (query.length == 0) {
+        searchResults?.replaceChildren();
         return;
-    for (const [i, hadith] of hadithsNoTashkil.entries()) {
-        // stop at 100 searches for now
-        if (searchResults?.childNodes?.length > 100)
-            return;
-        if (hadith.includes(query)) {
-            const newResult = document.createElement('li');
-            newResult.className = 'result-item';
-            newResult.innerText = hadith;
-            newResult.dataset.book = currentBook;
-            newResult.dataset.index = i + "";
-            searchResults?.appendChild(newResult);
-            //fragment.appendChild(newResult)
+    }
+    const numberQuery = parseInt(query);
+    if (numberQuery && hadithsNoTashkil[numberQuery]) {
+        const result = document.createElement("li");
+        result.className = "result-item";
+        result.innerText = `${numberQuery}- ${hadithsNoTashkil[numberQuery]}`;
+        result.dataset.book = currentBook;
+        result.dataset.index = (numberQuery - 1) + "";
+        searchResults?.replaceChildren(result);
+        resultsCount.innerText = 1 + "";
+        return;
+    }
+    searchResultsFragments = [];
+    processSearchChunked();
+    const firstChunk = searchResultsFragments[0].cloneNode(true);
+    searchResults?.appendChild(firstChunk);
+    function processSearchChunked() {
+        searchResults?.replaceChildren();
+        let index = 0;
+        let resultCount = 0;
+        function createResultsFragment(chunkSize) {
+            const fragment = document.createDocumentFragment();
+            let resultsFound = 0;
+            while (resultsFound < chunkSize && index < hadithsNoTashkil.length) {
+                const hadith = hadithsNoTashkil[index];
+                if (hadith.includes(query)) {
+                    resultsFound++;
+                    resultCount++;
+                    const newResult = document.createElement('li');
+                    newResult.className = 'result-item';
+                    newResult.innerText = `${index + 1}- ${hadith}`;
+                    newResult.dataset.book = currentBook;
+                    newResult.dataset.index = index + "";
+                    fragment.appendChild(newResult);
+                }
+                index++;
+            }
+            return fragment;
         }
+        function processNextChunk() {
+            if (index >= hadithsNoTashkil.length) {
+                resultsCount.innerText = (resultCount || "") + "";
+                return;
+            }
+            searchResultsFragments.push(createResultsFragment(searchFragmentSize));
+            timeoutIds.push(setTimeout(processNextChunk, 0));
+        }
+        processNextChunk();
     }
 });
 searchResults?.addEventListener("click", function (e) {

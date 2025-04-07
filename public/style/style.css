@@ -125,10 +125,24 @@ main {
     display: none;
 }
 
-.search-ui .search-results {
-    margin-top: 40px;
+.results-container {
     max-width: 500px;
     width: 80%;
+    margin-top: 30px;
+}
+
+.result-count {
+    text-align: start;
+    margin-block: 10px 15px;
+    font-size: 20px;
+}
+
+.result-count:has(span:empty) {
+    visibility: hidden;
+}
+
+.search-ui .search-results {
+    width: 100%;
     border-radius: 5px;
     border: 1px #333 solid;
     padding: 10px;
@@ -383,6 +397,7 @@ select.book-options:focus {
 
     .search-input input {
         min-width: 150px;
+        font-size: 16px;
     }
 
     .mobile.close-search {
