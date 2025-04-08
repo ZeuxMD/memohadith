@@ -1,4 +1,4 @@
-##Features
+## Features
 - PWA: the app can be installed and works offline
 - Light weight: the whole application is 6MB after all the books are downloaded
 - Fast and snappy: instantaneous browsing experience
