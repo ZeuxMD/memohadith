@@ -1,5 +1,5 @@
 //TODO: add english translations
-const hadithCollectionUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions.json";
+const hadithCollectionUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions.min.json";
 // List of the books I want
 const arBookNames = new Map();
 arBookNames.set("abudawud", "سنن أبي داوود");
@@ -56,10 +56,10 @@ async function getUrls(collectionUrl) {
                 continue;
             const collection = collectionData[key].collection;
             urls[key] = { ar: "", en: "" };
-            urls[key].ar = collection[0].link;
+            urls[key].ar = collection[0].link.replace(".json", ".min.json");
             for (const c of collection) {
                 if (c.language === "English")
-                    urls[key].en = c.link;
+                    urls[key].en = c.link.replace(".json", ".min.json");
             }
         }
         localStorage.setItem("urls", JSON.stringify(urls));
@@ -444,29 +444,31 @@ searchResults?.addEventListener("click", function (e) {
 // PWA installation prompt
 let deferredPrompt;
 const pwaPopup = document.getElementById("pwa-install");
-const denyPwa = localStorage.getItem("deny-pwa");
-if (denyPwa !== "true") {
-    window.addEventListener("beforeinstallprompt", (event) => {
-        event.preventDefault();
-        deferredPrompt = event;
-        pwaPopup?.classList.remove("hidden");
-    });
-}
-document.getElementById("accept-pwa")?.addEventListener("click", () => {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-            if (choiceResult.outcome === "accepted") {
-                console.log("PWA installed");
-            }
-            pwaPopup?.classList.add("hidden");
-            deferredPrompt = null;
-        });
+window.addEventListener("beforeinstallprompt", (e) => {
+    console.log("beforeinstallprompt");
+    e.preventDefault();
+    deferredPrompt = e;
+    // Check if we should show the prompt
+    const lastDeclined = localStorage.getItem('pwaDeclined');
+    const now = Date.now();
+    if (!lastDeclined || (now - parseInt(lastDeclined)) > (7 * 24 * 60 * 60 * 1000)) { // 7 days
+        pwaPopup?.classList.remove('hidden');
     }
 });
-document.getElementById("deny-pwa")?.addEventListener("click", () => {
-    pwaPopup?.classList.add("hidden");
-    localStorage.setItem("deny-pwa", "true");
+document.getElementById("accept-pwa")?.addEventListener('click', async () => {
+    if (!deferredPrompt)
+        return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+        pwaPopup?.classList.add('hidden');
+        localStorage.removeItem('pwaDeclined'); // Clear declined state if installed
+    }
+    deferredPrompt = null;
+});
+document.getElementById("deny-pwa")?.addEventListener('click', () => {
+    pwaPopup?.classList.add('hidden');
+    localStorage.setItem('pwaDeclined', Date.now().toString());
 });
 // ------------ Standalone code ----------------
 localStorage.setItem('userData', JSON.stringify({
