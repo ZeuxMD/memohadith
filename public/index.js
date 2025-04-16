@@ -30,9 +30,13 @@ let userData = JSON.parse(localStorage.getItem('userData') ?? "{}");
 const fragment_size = 100;
 const hadithBooks = {};
 let hadiths;
-let currentTitles = [];
-let currentTitleFragment = 0;
-const observer = new IntersectionObserver(observerCallback, { root: listItems, threshold: 0.5 });
+let rows = [];
+const clusterize = new Clusterize({
+    rows: rows,
+    scrollId: 'scrollArea',
+    contentId: 'contentArea'
+});
+
 let tashkilOn;
 let currentHadith;
 let currentBook;
@@ -78,69 +82,47 @@ function createOptionsList(urls) {
 async function getDatafromAPI(url) {
     return fetch(url)
         .then(response => {
-        if (!response.ok) {
-            throw new Error(`Failed to fetch data. Status code: ${response.status}`);
-        }
-        return response.json();
-    })
+            if (!response.ok) {
+                throw new Error(`Failed to fetch data. Status code: ${response.status}`);
+            }
+            return response.json();
+        })
         .catch(error => {
-        console.error("Error fetching data:", error);
-    });
+            console.error("Error fetching data:", error);
+        });
 }
 async function getHadithDatafromAPI(hadithUrl) {
     return getDatafromAPI(hadithUrl)
         .then(hadithData => {
-        // handle fetching before service worker is installed (i'll make it look better later.. i think)
-        let hadithsTemp;
-        if (hadithData.hadiths) {
-            hadithsTemp = hadithData.hadiths.map((hadithInstance) => hadithInstance.text.replaceAll("<br>", ""));
-        }
-        return hadithsTemp ?? hadithData;
-    });
-}
-function observerCallback(entries) {
-    for (const entry of entries) {
-        if (!entry.isIntersecting)
-            continue;
-        const target = entry.target;
-        if (target.dataset.downSentry) {
-            observer.unobserve(target);
-            currentTitleFragment++;
-            displayHadithTitles(currentTitleFragment);
-            observeFirstLiSentry(listItems?.firstElementChild);
-        }
-        else if (target.dataset.upSentry && currentTitleFragment > 1) {
-            observer.unobserve(target);
-            removeLastLiFragment();
-            currentTitleFragment--;
-            const newTitles = currentTitles[currentTitleFragment - 1].cloneNode(true);
-            listItems?.insertBefore(newTitles, listItems.firstElementChild);
-            observeFirstLiSentry(listItems?.firstElementChild);
-            observeLastLiSentry(listItems?.lastElementChild);
-        }
-    }
+            // handle fetching before service worker is installed (i'll make it look better later.. i think)
+            let hadithsTemp;
+            if (hadithData.hadiths) {
+                hadithsTemp = hadithData.hadiths.map((hadithInstance) => hadithInstance.text.replaceAll("<br>", ""));
+            }
+            return hadithsTemp ?? hadithData;
+        });
 }
 async function updateHadiths(currentBook) {
     // The browser loads all hadithBooks when Idle, now when you want a hadith array it's just there, no need to fetch everytime from api or indexedDB even!
     // If it didn't load hadithBooks yet, then it is probably the first load.
     hadiths = hadithBooks[currentBook] ?? await getHadithDatafromAPI(urls[currentBook].ar);
     ;
-    currentTitles = [];
     displayHadith();
     processTitlesChunked(fragment_size);
 }
 function processTitlesChunked(chunkSize) {
     listItems?.replaceChildren();
     let index = 0;
+    rows = [];
     function processNextChunk() {
         if (index >= hadiths.length) {
+            clusterize.update([...rows]);
             return;
         }
-        currentTitles.push(createHadithTitles(index, chunkSize));
+        createHadithTitles(index, chunkSize);
         if (currentHadith >= index && currentHadith <= index + chunkSize) {
-            currentTitleFragment = getCurrentTitleFragment();
-            displayHadithTitles(currentTitleFragment);
-            observeFirstLiSentry(listItems?.firstElementChild);
+            clusterize.update([...rows]);
+            scrollToIndex(currentHadith);
         }
         index += chunkSize;
         setTimeout(processNextChunk, 0);
@@ -148,29 +130,13 @@ function processTitlesChunked(chunkSize) {
     processNextChunk();
 }
 function createHadithTitles(chunkIndex, chunkSize) {
-    // Batch DOM updates
-    const fragment = document.createDocumentFragment();
     const chunkEnd = Math.min(chunkIndex + chunkSize, hadiths.length);
     for (let i = chunkIndex; i < chunkEnd; i++) {
         const hadith = hadiths[i];
         let start = hadith.indexOf("\"") + 1 || hadith.indexOf(":") + 1 || hadith.indexOf("سلم ") + 3;
         const title = removeTashkeel(hadith.slice(start, start + 40).split(" ").splice(0, 4).join(" "));
-        const newTitle = document.createElement('li');
-        newTitle.className = 'list-item';
-        newTitle.innerText = (i + 1) + ". " + title + "..";
-        newTitle.dataset.index = i + "";
-        fragment.appendChild(newTitle);
+        rows.push(`<li class="list-item" data-index="${i}">${i + 1}. ${title}..</li>`);
     }
-    return fragment;
-}
-function displayHadithTitles(titlesFragmentIndex) {
-    if (titlesFragmentIndex >= currentTitles.length)
-        return;
-    const titles = currentTitles[titlesFragmentIndex].cloneNode(true);
-    observeLastLiSentry(titles);
-    if (listItems?.childElementCount >= 200)
-        removeFirstLiFragment();
-    listItems?.appendChild(titles);
 }
 function displayHadith() {
     const hadithToDisplay = tashkilOn ? hadiths[currentHadith] : removeTashkeel(hadiths[currentHadith]);
@@ -202,41 +168,16 @@ function setHadith(newValue) {
     currentHadith = parseInt(newValue);
 }
 // ----------------- Helper Functions ------------------
-function getCurrentTitleFragment() {
-    return Math.floor(currentHadith / fragment_size);
-}
 function clearTimeouts(ids) {
     for (const id of ids) {
         clearTimeout(id);
     }
 }
-function observeLiSentries(fragment) {
-    observeFirstLiSentry(fragment);
-    observeLastLiSentry(fragment);
-}
-function observeFirstLiSentry(fragment) {
-    const firstLiElement = (fragment instanceof DocumentFragment ? fragment.firstElementChild : fragment);
-    firstLiElement.dataset.upSentry = "1";
-    observer.observe(firstLiElement);
-}
-function observeLastLiSentry(fragment) {
-    const lastLiElement = (fragment instanceof DocumentFragment ? fragment.lastElementChild : fragment);
-    lastLiElement.dataset.downSentry = "1";
-    observer.observe(lastLiElement);
-}
-function removeFirstLiFragment() {
-    removeLiFragment(0);
-}
-function removeLastLiFragment() {
-    removeLiFragment(1);
-}
-function removeLiFragment(fragmentIndex) {
-    const allLis = listItems?.querySelectorAll('li');
-    const start = fragmentIndex * 100;
-    const end = start + 100;
-    for (let i = start; i < end && allLis[i]; i++) {
-        allLis[i].remove();
-    }
+function scrollToIndex(index) {
+    const scrollContainer = document.getElementById('scrollArea');
+    const sampleItem = scrollContainer.querySelector('li');
+    const itemHeight = sampleItem ? sampleItem.offsetHeight : 30;
+    scrollContainer.scrollTop = index * itemHeight;
 }
 function removeTashkeel(text) {
     const tashkeelRegex = /[\u0617-\u061A\u064B-\u0652]/g;
@@ -435,10 +376,7 @@ searchResults?.addEventListener("click", function (e) {
     }
     else {
         displayHadith();
-        currentTitleFragment = getCurrentTitleFragment();
-        const titles = currentTitles[currentTitleFragment].cloneNode(true);
-        observeLiSentries(titles);
-        listItems?.replaceChildren(titles);
+        scrollToIndex(currentHadith);
     }
 });
 // PWA installation prompt
@@ -482,9 +420,9 @@ requestIdleCallback(() => {
     for (const bookName in urls) {
         getHadithDatafromAPI(urls[bookName].ar)
             .then(response => {
-            hadithBooks[bookName] = response;
-        })
+                hadithBooks[bookName] = response;
+            })
             .catch(error => console.log("error: ", error));
     }
 });
-export {};
+export { };

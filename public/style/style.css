@@ -227,14 +227,15 @@ ul {
     border: 1px;
 }
 
-.list-items {
-    margin-block: 20px;
+#scrollArea {
+    width: 95%;
     max-height: 500px;
+    margin-block: 20px;
     height: max-content;
-    overflow-y: auto;
     background: #00649d;
     border-radius: 7px;
-    padding-inline: 5px;
+    padding-inline: 5px;  
+    overflow-y: auto;
 }
 
 .list.active {
