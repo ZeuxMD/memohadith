@@ -147,10 +147,13 @@ main {
     height: max-content;
     border-radius: 5px;
     border: 1px #333 solid;
-    padding: 10px;
+    padding: 10px 0;
     font-size: 20px;
     overflow-y: auto;
     gap: 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 /* TODO: improve on this later*/
@@ -171,8 +174,12 @@ main {
     display: none;
 }
 
+#contentAreaResults {
+    width: 90%;
+}
+
 .search-results>li {
-    height: 100px;
+    height: 95px;
     overflow: hidden;
     flex-shrink: 0;
     line-height: 1.8;
