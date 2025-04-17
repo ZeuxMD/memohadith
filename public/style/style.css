@@ -141,13 +141,15 @@ main {
     visibility: hidden;
 }
 
-.search-results {
+#scrollAreaResults {
     width: 100%;
+    max-height: 600px;
+    height: max-content;
     border-radius: 5px;
     border: 1px #333 solid;
     padding: 10px;
     font-size: 20px;
-    overflow-y: scroll;
+    overflow-y: auto;
     gap: 13px;
 }
 
@@ -165,7 +167,7 @@ main {
     display: none;
 }
 
-.search-results:empty {
+#scrollAreaResults:has(ul:empty) {
     display: none;
 }
 
@@ -174,7 +176,6 @@ main {
     overflow: hidden;
     flex-shrink: 0;
     line-height: 1.8;
-    max-height: calc(1.6em * 3);
     text-overflow: ellipsis;
     display: -webkit-box;
     -webkit-box-orient: vertical;
@@ -229,12 +230,12 @@ ul {
 
 #scrollArea {
     width: 95%;
-    max-height: 500px;
     margin-block: 20px;
+    max-height: 500px;
     height: max-content;
     background: #00649d;
     border-radius: 7px;
-    padding-inline: 5px;  
+    padding-inline: 5px;
     overflow-y: auto;
 }
 
