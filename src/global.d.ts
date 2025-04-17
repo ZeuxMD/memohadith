@@ -8,6 +8,7 @@ declare class Clusterize {
 		show_no_data_row?: boolean;
 		rows_in_block?: number;           // Number of rows to render in each block
 		blocks_in_cluster?: number;       // Number of blocks to keep in DOM
+		keep_parity?: boolean;
 		callbacks?: {
 			clusterWillChange?: () => void;
 			clusterChanged?: () => void;

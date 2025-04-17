@@ -42,6 +42,7 @@ const clusterizeResults = new Clusterize({
     show_no_data_row: false,
     rows_in_block: 20,
     blocks_in_cluster: 4,
+    keep_parity: false,
 });
 let tashkilOn;
 let currentHadith;
@@ -282,7 +283,7 @@ const handleCloseSearch = function (e) {
         document.removeEventListener('click', handleCloseSearch);
     }
 };
-let hadithsNoTashkil;
+let hadithsNoTashkil = [];
 function extractHadithNoTashkil(hadiths) {
     let result = [];
     for (const hadith of hadiths) {
@@ -290,17 +291,52 @@ function extractHadithNoTashkil(hadiths) {
     }
     return result;
 }
+let isGlobalSearch = false;
+const searchScopeToggle = document.querySelector('.search-scope-toggle');
+const scopeText = searchScopeToggle?.querySelector('.scope-text');
+// Add the event listener
+searchScopeToggle?.addEventListener('click', () => {
+    isGlobalSearch = !isGlobalSearch;
+    scopeText.textContent = isGlobalSearch ? 'بحث شامل' : 'الكتاب الحالي';
+    searchInput?.focus();
+    initializeSearchScope();
+    if (searchInput?.value.trim()) {
+        // Trigger the search again
+        searchInput.dispatchEvent(new Event('input'));
+    }
+});
 searchBtn?.addEventListener("click", function (e) {
     e.stopPropagation();
     searchUI?.classList.remove("hidden");
     list?.classList.remove("active");
     searchInput?.focus();
     clusterizeResults.clear();
-    setTimeout(() => {
-        hadithsNoTashkil = extractHadithNoTashkil(hadiths);
-    }, 0);
+    initializeSearchScope();
     document.addEventListener('click', handleCloseSearch);
 });
+// TODO: save isGlobalSearch as prefrence in localStorage
+function initializeSearchScope() {
+    const totalLength = Object.values(hadithBooks).reduce((sum, book) => sum + book.length, 0);
+    setTimeout(() => {
+        if (isGlobalSearch && hadithsNoTashkil.length !== totalLength) {
+            const allHadiths = [];
+            // Get total length first to preallocate array
+            allHadiths.length = totalLength;
+            let currentIndex = 0;
+            for (const bookName in hadithBooks) {
+                const book = hadithBooks[bookName];
+                for (let i = 0; i < book.length; i++) {
+                    allHadiths[currentIndex] = removeTashkeelAndHamza(book[i]);
+                    currentIndex++;
+                }
+            }
+            hadithsNoTashkil = allHadiths;
+        }
+        else if (hadithsNoTashkil.length === 0 || hadithsNoTashkil.length !== hadiths.length) {
+            hadithsNoTashkil = extractHadithNoTashkil(hadiths);
+        }
+    }, 0);
+}
 let timeoutIds = [];
 searchInput?.addEventListener("input", function (e) {
     const target = e.target;
@@ -329,6 +365,10 @@ searchInput?.addEventListener("input", function (e) {
         let index = 0;
         let resultCount = 0;
         const batchSize = 50;
+        const booksToSearch = isGlobalSearch ? Object.keys(hadithBooks) : [currentBook];
+        let currentBookIndex = 0;
+        let indexInBook = 0;
+        console.log(hadithsNoTashkil.length);
         function createResultsFragment(chunkSize) {
             let resultsFound = 0;
             let newRows = [];
@@ -337,9 +377,16 @@ searchInput?.addEventListener("input", function (e) {
                 if (hadith.includes(query)) {
                     resultsFound++;
                     resultCount++;
-                    newRows.push(`<li class="result-item" data-book="${currentBook}" data-index="${index}">${index + 1}- ${hadith}</li>`);
+                    newRows.push(`<li class="result-item" data-book="${booksToSearch[currentBookIndex]}" data-index="${indexInBook}">${index + 1}- ${hadith}</li>`);
                 }
+                indexInBook++;
                 index++;
+                const currentBookLength = hadithBooks[booksToSearch[currentBookIndex]].length;
+                if (indexInBook > currentBookLength) {
+                    console.log("here, ", indexInBook, currentBookLength);
+                    currentBookIndex++;
+                    indexInBook = 0;
+                }
             }
             return newRows;
         }
@@ -368,10 +415,8 @@ searchResults?.addEventListener("click", function (e) {
         currentBook = targetBook;
         updateHadiths(currentBook);
     }
-    else {
-        displayHadith();
-        scrollToIndex(currentHadith);
-    }
+    displayHadith();
+    scrollToIndex(currentHadith);
 });
 // PWA installation prompt
 let deferredPrompt;
