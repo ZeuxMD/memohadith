@@ -1,19 +1,8 @@
 //TODO: add english translations
-const hadithCollectionUrl = "https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions.min.json";
-// List of the books I want
-const arBookNames = new Map();
-arBookNames.set("abudawud", "سنن أبي داوود")
-arBookNames.set("bukhari", "صحيح البخاري")
-arBookNames.set("ibnmajah", "سنن ابن ماجة")
-arBookNames.set("malik", "موطأ مالك")
-arBookNames.set("muslim", "صحيح مسلم")
-arBookNames.set("nasai", "سنن النسائي")
-arBookNames.set("nawawi", "الأربعون النووية")
-arBookNames.set("tirmidhi", "جامع الترمذي")
-const bookOptions = document.querySelector('.book-options');
-
-const urls = await getUrls(hadithCollectionUrl);
-createOptionsList(urls);
+const newUrl = "https://cdn.jsdelivr.net/gh/ZeuxMD/hadith-books@latest/bookUrls.json"
+const booksData: BookData[] = await getDatafromAPI(newUrl)
+const bookOptions = document.querySelector('.book-options') as HTMLSelectElement;
+createOptionsList(booksData);
 
 const hadithDisplay = document.getElementById("hadith")
 const hadithContainer = document.querySelector(".hadith-container")
@@ -57,7 +46,7 @@ let visits: number;
 // if there is no cached data, initialize to defaults
 visits = (userData?.visits ?? 0) + 1;
 currentHadith = userData?.currentHadith ?? 0;
-currentBook = userData?.currentBook ?? "nawawi";
+currentBook = userData?.currentBook ?? "nawawi40";
 tashkilOn = userData?.tashkilOn ?? true;
 const currentBookOption = bookOptions!.querySelector(`[value=${currentBook}]`) as HTMLOptionElement;
 if (currentBookOption)
@@ -67,19 +56,12 @@ await updateHadiths(currentBook);
 // ------------ functions ----------------
 
 async function getUrls(collectionUrl: string) {
-	const urls: { [key: string]: { ar: string, en: string } } = {};
+	const urls: { [key: string]: BookData["urls"] } = {};
 
 	if (!localStorage.getItem("urls")) {
-		const collectionData = await getDatafromAPI(collectionUrl);
-
-		for (let key in collectionData) {
-			if (!arBookNames.get(key)) continue;
-			const collection = collectionData[key].collection;
-			urls[key] = { ar: "", en: "" };
-			urls[key].ar = collection[0].link.replace(".json", ".min.json");
-			for (const c of collection) {
-				if (c.language === "English") urls[key].en = c.link.replace(".json", ".min.json");
-			}
+		const bookData: BookData[] = await getDatafromAPI(collectionUrl);
+		for (const book of bookData) {
+			urls[book.book] = book.urls;
 		}
 		localStorage.setItem("urls", JSON.stringify(urls))
 		return urls;
@@ -88,11 +70,11 @@ async function getUrls(collectionUrl: string) {
 	return JSON.parse(localStorage.getItem(("urls")) ?? "");
 }
 
-function createOptionsList(urls: string[]) {
-	for (let bookName in urls) {
+function createOptionsList(urls: BookData[]) {
+	for (let book of urls) {
 		const option = document.createElement("option");
-		option.value = bookName;
-		option.text = arBookNames.get(bookName);
+		option.value = book.book;
+		option.text = book.arabicTitle;
 		bookOptions?.appendChild(option);
 	}
 }
@@ -115,8 +97,8 @@ async function getHadithDatafromAPI(hadithUrl: string): Promise<string[]> {
 		.then(hadithData => {
 			// handle fetching before service worker is installed (i'll make it look better later.. i think)
 			let hadithsTemp;
-			if (hadithData.hadiths) {
-				hadithsTemp = hadithData.hadiths.map((hadithInstance: { text: string }) => hadithInstance.text.replaceAll("<br>", ""))
+			if (hadithData.chapters) {
+				hadithsTemp = hadithData.chapters.flatMap((chapter: { hadiths: string[] }) => chapter.hadiths)
 			}
 			return hadithsTemp ?? hadithData;
 		})
@@ -126,7 +108,7 @@ async function getHadithDatafromAPI(hadithUrl: string): Promise<string[]> {
 async function updateHadiths(currentBook: string) {
 	// The browser loads all hadithBooks when Idle, now when you want a hadith array it's just there, no need to fetch everytime from api or indexedDB even!
 	// If it didn't load hadithBooks yet, then it is probably the first load.
-	hadiths = hadithBooks[currentBook] ?? await getHadithDatafromAPI(urls[currentBook].ar);;
+	hadiths = hadithBooks[currentBook] ?? await getHadithDatafromAPI(booksData.find(book => book.book == currentBook)?.urls.minified ?? "");;
 	displayHadith();
 	const chunkSize = 100;
 	processTitlesChunked(chunkSize)
@@ -447,6 +429,7 @@ searchResults?.addEventListener("click", function(e) {
 
 	if (targetBook !== currentBook) {
 		currentBook = targetBook;
+		bookOptions.value = currentBook;
 		updateHadiths(currentBook)
 	}
 	displayHadith();
@@ -499,10 +482,10 @@ localStorage.setItem('userData', JSON.stringify({
 
 // Load all books when the browser is idle >:)
 requestIdleCallback(() => {
-	for (const bookName in urls) {
-		getHadithDatafromAPI(urls[bookName].ar)
+	for (const book of booksData) {
+		getHadithDatafromAPI(book.urls.minified)
 			.then(response => {
-				hadithBooks[bookName] = response;
+				hadithBooks[book.book] = response;
 			})
 			.catch(error => console.log("error: ", error))
 	}

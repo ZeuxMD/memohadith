@@ -22,3 +22,15 @@ declare class Clusterize {
 	destroy(clean: boolean): void;
 	refresh(force: boolean): void;
 }
+
+interface BookData {
+	book: string,
+	arabicTitle: string,
+	author: string,
+	urls: {
+		json: string,
+		minified: string,
+		compressed: string
+	}
+}
+

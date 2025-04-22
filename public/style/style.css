@@ -164,6 +164,7 @@ main {
     width: 100%;
     max-height: 600px;
     height: max-content;
+    margin-bottom: 20px;
     border-radius: 5px;
     border: 1px #333 solid;
     padding: 10px 0;
@@ -435,8 +436,6 @@ select.book-options:focus {
         max-width: unset;
         width: 85%;
     }
-
-    .search-scope-toggle .scope-text {}
 
     .search-scope-toggle {
         padding: 0 10px;
