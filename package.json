@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/MohamedAdelMohamedMetwaley/memohadith#readme",
   "devDependencies": {
+    "@types/pako": "^2.0.3",
     "typescript": "^5.8.3"
   }
 }

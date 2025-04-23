@@ -27,9 +27,7 @@ interface BookData {
   book: string;
   arabicTitle: string;
   author: string;
-  urls: {
-    json: string;
-    minified: string;
-    compressed: string;
-  };
+  link: string;
 }
+
+declare const pako: typeof import("pako");

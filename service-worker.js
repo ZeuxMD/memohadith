@@ -167,8 +167,8 @@ async function handleStaticApiRequest(request) {
 			// If it is hadith data, then extract only the hadiths
 			// NOTE: this will need to be changed if you use another api
 			let hadiths;
-			if (jsonData.hadiths) {
-				hadiths = jsonData.hadiths.map((hadithInstance) => hadithInstance.text.replaceAll("<br>", ""));
+			if (jsonData.chapters) {
+				hadiths = jsonData.chapters.flatMap(chapter => chapter.hadiths);
 				await compressAndStore(OBJECT_STORE_NAME, request.url, hadiths);
 				return new Response(JSON.stringify(hadiths), { status: 200, headers: { "Content-Type": "application/json" } })
 			}

@@ -1,8 +1,6 @@
 //TODO: add english translations
-importScripts("https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js");
-console.log(pako);
 const newUrl =
-  "https://cdn.jsdelivr.net/gh/ZeuxMD/hadith-books@latest/bookUrls.json";
+  "https://cdn.jsdelivr.net/gh/ZeuxMD/hadith-books/bookUrls.json";
 const booksData: BookData[] = await getDatafromAPI(newUrl);
 const bookOptions = document.querySelector(
   ".book-options"
@@ -91,15 +89,7 @@ async function getDatafromAPI(url: string) {
 }
 
 async function getHadithDatafromAPI(bookData: BookData): Promise<string[]> {
-  return fetch(bookData.urls.compressed).then(async (response) => {
-    if (!response.ok) {
-      throw new Error(`Failed to fetch data. Status code: ${response.status}`);
-    }
-    const compressedData = new Uint8Array(await response.arrayBuffer());
-    const decompressedData = pako.inflate(compressedData, { to: "string" });
-    const hadithData = JSON.parse(decompressedData);
-  });
-  return getDatafromAPI(bookData.urls.compressed).then((hadithData) => {
+  return getDatafromAPI(bookData.link).then((hadithData) => {
     // handle fetching before service worker is installed (i'll make it look better later.. i think)
     let hadithsTemp;
     if (hadithData.chapters) {
@@ -116,9 +106,7 @@ async function updateHadiths(currentBook: string) {
   // If it didn't load hadithBooks yet, then it is probably the first load.
   hadiths =
     hadithBooks[currentBook] ??
-    (await getHadithDatafromAPI(
-      booksData.find((book) => book.book == currentBook)?.urls.minified ?? ""
-    ));
+    (await getHadithDatafromAPI(booksData.find((book) => book.book == currentBook)!));
   displayHadith();
   const chunkSize = 100;
   processTitlesChunked(chunkSize);
@@ -228,10 +216,10 @@ function removeTashkeelAndHamza(text: string) {
 
 // ------------ Event listeners ----------------
 
-nextHadithBtn?.addEventListener("click", function () {
+nextHadithBtn?.addEventListener("click", function() {
   nextHadith();
 });
-prevHadithBtn?.addEventListener("click", function () {
+prevHadithBtn?.addEventListener("click", function() {
   prevHadith();
 });
 
@@ -258,12 +246,12 @@ function checkSwipeDirection(
   }
 }
 
-document.addEventListener("touchstart", function (e) {
+document.addEventListener("touchstart", function(e) {
   pointerstartX = e.changedTouches[0].screenX;
   startTime = Date.now();
 });
 
-document.addEventListener("touchend", function (e) {
+document.addEventListener("touchend", function(e) {
   pointerendX = e.changedTouches[0].screenX;
   function handleRightSwipe() {
     list?.classList.remove("active");
@@ -274,10 +262,10 @@ document.addEventListener("touchend", function (e) {
     checkSwipeDirection(nextHadith, prevHadith);
   }
   // list active, close list on right swipe, do nothing on left swipe
-  else checkSwipeDirection(handleRightSwipe, () => {});
+  else checkSwipeDirection(handleRightSwipe, () => { });
 });
 
-const handleClickOutsideList = function (e: Event) {
+const handleClickOutsideList = function(e: Event) {
   const target = e.target as Node;
   if (!list?.contains(target)) {
     list?.classList.remove("active");
@@ -285,13 +273,13 @@ const handleClickOutsideList = function (e: Event) {
   }
 };
 
-listBtn?.addEventListener("click", function (e) {
+listBtn?.addEventListener("click", function(e) {
   e.stopPropagation();
   list?.classList.toggle("active");
   document.addEventListener("click", handleClickOutsideList);
 });
 
-list?.addEventListener("click", function (e) {
+list?.addEventListener("click", function(e) {
   const target = e.target as HTMLElement;
   if (target?.dataset.index) {
     setHadith(target.dataset.index);
@@ -300,19 +288,19 @@ list?.addEventListener("click", function (e) {
   }
 });
 
-toggleTashkilBtn?.addEventListener("change", function () {
+toggleTashkilBtn?.addEventListener("change", function() {
   tashkilOn = !tashkilOn;
   displayHadith();
 });
 
-bookOptions?.addEventListener("change", async function (e) {
+bookOptions?.addEventListener("change", async function(e) {
   const target = e.target as HTMLOptionElement;
   currentBook = target.value;
   currentHadith = 0;
   await updateHadiths(currentBook);
 });
 
-const handleCloseSearch = function (e: Event) {
+const handleCloseSearch = function(e: Event) {
   const target = e.target as HTMLElement;
   // clicked on a result from the search
   searchResults?.scrollTo({
@@ -352,7 +340,7 @@ searchScopeToggle?.addEventListener("click", () => {
   }
 });
 
-searchBtn?.addEventListener("click", function (e) {
+searchBtn?.addEventListener("click", function(e) {
   e.stopPropagation();
   searchUI?.classList.remove("hidden");
   list?.classList.remove("active");
@@ -364,7 +352,7 @@ searchBtn?.addEventListener("click", function (e) {
 
 let timeoutIds: number[] = [];
 
-searchInput?.addEventListener("input", function (e) {
+searchInput?.addEventListener("input", function(e) {
   const target = e.target as HTMLInputElement;
   // clean the search query of any tashkil or hamza for consistency
   const query = removeTashkeelAndHamza(target.value);
@@ -386,8 +374,7 @@ searchInput?.addEventListener("input", function (e) {
   if (numberQuery && hadiths[numberQuery]) {
     resultsCount.innerText = 1 + "";
     clusterizeResults.update([
-      `<li class="result-item" data-book="${currentBook}" data-index="${
-        numberQuery - 1
+      `<li class="result-item" data-book="${currentBook}" data-index="${numberQuery - 1
       }">${numberQuery}- ${removeTashkeel(hadiths[numberQuery])}</li>`,
     ]);
     return;
@@ -428,10 +415,8 @@ searchInput?.addEventListener("input", function (e) {
           resultsFound++;
           resultCount++;
           newRows.push(
-            `<li class="result-item" data-book="${
-              booksToSearch[currentBookIndex]
-            }" data-index="${indexInBook}">${
-              isGlobalSearch ? "" : index + 1 + "-"
+            `<li class="result-item" data-book="${booksToSearch[currentBookIndex]
+            }" data-index="${indexInBook}">${isGlobalSearch ? "" : index + 1 + "-"
             } ${searchableHadith}</li>`
           );
         }
@@ -466,7 +451,7 @@ searchInput?.addEventListener("input", function (e) {
   }
 });
 
-searchResults?.addEventListener("click", function (e) {
+searchResults?.addEventListener("click", function(e) {
   const target = e.target as HTMLLIElement;
   if (!target.dataset) return;
   const targetIndex = target.dataset.index;
@@ -534,7 +519,7 @@ localStorage.setItem(
 // Load all books when the browser is idle >:)
 requestIdleCallback(() => {
   for (const book of booksData) {
-    getHadithDatafromAPI(book.urls.minified)
+    getHadithDatafromAPI(book)
       .then((response) => {
         hadithBooks[book.book] = response;
       })
@@ -542,4 +527,4 @@ requestIdleCallback(() => {
   }
 });
 
-export {};
+export { };
