@@ -156,8 +156,16 @@ main {
     font-size: 20px;
 }
 
+.result-count>span {
+    font-size: 19px;
+}
+
 .result-count:has(span:empty) {
     visibility: hidden;
+}
+
+.result-item>span.highlight {
+    color: red;
 }
 
 #scrollAreaResults {

@@ -25,7 +25,6 @@ const toggleTashkilBtn = document.getElementById("toggleTashkil");
 let userData = JSON.parse(localStorage.getItem("userData") ?? "{}");
 
 const hadithBooks: { [key: string]: string[] } = {};
-let hadiths: string[];
 const clusterize = new Clusterize({
   rows: [],
   scrollId: "scrollArea",
@@ -104,9 +103,9 @@ async function getHadithDatafromAPI(bookData: BookData): Promise<string[]> {
 async function updateHadiths(currentBook: string) {
   // The browser loads all hadithBooks when Idle, now when you want a hadith array it's just there, no need to fetch everytime from api or indexedDB even!
   // If it didn't load hadithBooks yet, then it is probably the first load.
-  hadiths =
-    hadithBooks[currentBook] ??
-    (await getHadithDatafromAPI(booksData.find((book) => book.book == currentBook)!));
+  if (!hadithBooks[currentBook]) {
+    hadithBooks[currentBook] = await getHadithDatafromAPI(booksData.find((book) => book.book == currentBook)!)
+  }
   displayHadith();
   const chunkSize = 100;
   processTitlesChunked(chunkSize);
@@ -115,7 +114,7 @@ async function updateHadiths(currentBook: string) {
 function processTitlesChunked(chunkSize: number) {
   let index = 0;
   function processNextChunk() {
-    if (index >= hadiths.length) {
+    if (index >= hadithBooks[currentBook].length) {
       return;
     }
     clusterize.append(createHadithTitles(index, chunkSize));
@@ -130,6 +129,7 @@ function processTitlesChunked(chunkSize: number) {
 }
 
 function createHadithTitles(chunkIndex: number, chunkSize: number) {
+  const hadiths = hadithBooks[currentBook];
   const chunkEnd = Math.min(chunkIndex + chunkSize, hadiths.length);
   let newRows = [];
   for (let i = chunkIndex; i < chunkEnd; i++) {
@@ -153,6 +153,7 @@ function createHadithTitles(chunkIndex: number, chunkSize: number) {
 }
 
 function displayHadith() {
+  const hadiths = hadithBooks[currentBook];
   const hadithToDisplay = tashkilOn
     ? hadiths[currentHadith]
     : removeTashkeel(hadiths[currentHadith]);
@@ -175,13 +176,13 @@ function displayHadith() {
 function nextHadith() {
   currentHadith++;
   //TODO: add congratulations message if you finished a series of hadiths
-  if (currentHadith == hadiths.length) currentHadith = 0;
+  if (currentHadith == hadithBooks[currentBook].length) currentHadith = 0;
   displayHadith();
 }
 
 function prevHadith() {
   currentHadith--;
-  if (currentHadith < 0) currentHadith = hadiths.length - 1;
+  if (currentHadith < 0) currentHadith = hadithBooks[currentBook].length - 1;
   displayHadith();
 }
 
@@ -311,10 +312,7 @@ const handleCloseSearch = function(e: Event) {
     target.classList.contains("close-search")
   ) {
     searchUI?.classList.add("hidden");
-    clusterizeResults.clear();
-    resultsCount.innerText = "";
 
-    if (searchInput) searchInput.value = "";
     document.removeEventListener("click", handleCloseSearch);
   }
 };
@@ -328,11 +326,13 @@ const scopeText = searchScopeToggle?.querySelector(
   ".scope-text"
 ) as HTMLSpanElement;
 
+let prevResults: { [key: string]: string[] } = {};
 // Add the event listener
 searchScopeToggle?.addEventListener("click", () => {
   isGlobalSearch = !isGlobalSearch;
   scopeText.textContent = isGlobalSearch ? "بحث شامل" : "الكتاب الحالي";
   searchInput?.focus();
+  prevResults = {};
 
   if (searchInput?.value.trim()) {
     // Trigger the search again
@@ -345,7 +345,6 @@ searchBtn?.addEventListener("click", function(e) {
   searchUI?.classList.remove("hidden");
   list?.classList.remove("active");
   searchInput?.focus();
-  clusterizeResults.clear();
   document.addEventListener("click", handleCloseSearch);
 });
 // TODO: save isGlobalSearch as prefrence in localStorage
@@ -360,22 +359,29 @@ searchInput?.addEventListener("input", function(e) {
   searchResults?.scrollTo({
     top: 0,
   });
-  resultsCount.innerText = "";
+  resultsCount.innerText = "جار البحث..";
   // clear timeouts from previous searches
   clearTimeouts(timeoutIds);
   timeoutIds = [];
 
   if (query.length == 0) {
     clusterizeResults.clear();
+    resultsCount.innerText = "";
+    return;
+  }
+
+  if (prevResults[query]) {
+    clusterizeResults.update([...prevResults[query]])
+    resultsCount.innerText = prevResults[query].length + "";
     return;
   }
 
   const numberQuery = parseInt(query);
-  if (numberQuery && hadiths[numberQuery]) {
+  if (numberQuery && hadithBooks[currentBook][numberQuery]) {
     resultsCount.innerText = 1 + "";
     clusterizeResults.update([
       `<li class="result-item" data-book="${currentBook}" data-index="${numberQuery - 1
-      }">${numberQuery}- ${removeTashkeel(hadiths[numberQuery])}</li>`,
+      }">${numberQuery}- ${removeTashkeel(hadithBooks[currentBook][numberQuery])}</li>`,
     ]);
     return;
   }
@@ -384,51 +390,73 @@ searchInput?.addEventListener("input", function(e) {
 
   function processSearchChunked() {
     let resultCount = 0;
-    const batchSize = 50;
+    const batchSize = 200;
     let index = 0;
 
     const booksToSearch = isGlobalSearch
       ? Object.keys(hadithBooks)
       : [currentBook];
-    const totalHadithsCount = Object.values(booksToSearch).reduce(
+    let currentBookIndex = 0;
+    let indexInBook = 0;
+    let prevQuery = query.slice(0, -1);
+    while (prevQuery.length > 2 && !prevResults[prevQuery]) {
+      prevQuery = prevQuery.slice(0, -1);
+    }
+    let searchingInCache = prevResults[prevQuery];
+    let hadithsToSearch = searchingInCache ? prevResults[prevQuery] : hadithBooks[booksToSearch[currentBookIndex]];
+    let currentBookLength = hadithsToSearch.length;
+    const totalHadithsCount = searchingInCache ? currentBookLength : Object.values(booksToSearch).reduce(
       (sum, book) => sum + hadithBooks[book].length,
       0
     );
-    let currentBookIndex = 0;
-    let indexInBook = 0;
-    let currentBookLength = hadithBooks[booksToSearch[currentBookIndex]].length;
+    const resultsToCache: string[] = [];
+
+    function searchInString(string: string, query: string) {
+      for (let i = searchingInCache ? string.indexOf(">") : 0; i < string.length && i + query.length <= string.length; i++) {
+        const curSubString = string.substring(i, i + query.length);
+        if (curSubString === query) {
+          return `${searchingInCache ? string.slice(0, i) : string.slice(0, i).split(" ").slice(-4).join(" ")}<span class="highlight">${curSubString}</span>${string.slice(i + query.length)}`
+        }
+      }
+      return "";
+    }
+
+    function removeHighlightSpan(string: string) {
+      return string.replace('<span class="highlight">', '').replace('</span>', '');
+    }
 
     function createResultsFragment(chunkSize: number) {
       let resultsFound = 0;
       let newRows = [];
 
       while (resultsFound < chunkSize && index < totalHadithsCount) {
-        const hadith =
-          hadithBooks[booksToSearch[currentBookIndex]][indexInBook];
+        const hadith = hadithsToSearch[indexInBook];
         if (!hadith) {
           indexInBook++;
           index++;
           continue;
         }
-        const searchableHadith = removeTashkeelAndHamza(hadith);
-        if (searchableHadith.includes(query)) {
+        const searchableHadith = searchingInCache ? removeHighlightSpan(hadith) : removeTashkeelAndHamza(hadith);
+        const searchResult = searchInString(searchableHadith, query);
+        if (searchResult) {
           resultsFound++;
           resultCount++;
-          newRows.push(
+          const result = searchingInCache ? searchResult :
             `<li class="result-item" data-book="${booksToSearch[currentBookIndex]
             }" data-index="${indexInBook}">${isGlobalSearch ? "" : index + 1 + "-"
-            } ${searchableHadith}</li>`
-          );
+            } ${searchResult}</li>`;
+          newRows.push(result);
+          resultsToCache.push(result);
         }
         indexInBook++;
         index++;
 
-        if (indexInBook >= currentBookLength) {
+        if (isGlobalSearch && !searchingInCache && indexInBook >= currentBookLength) {
           currentBookIndex++;
           indexInBook = 0;
+          hadithsToSearch = hadithBooks[booksToSearch[currentBookIndex]];
           if (currentBookIndex < booksToSearch.length)
-            currentBookLength =
-              hadithBooks[booksToSearch[currentBookIndex]].length;
+            currentBookLength = hadithsToSearch.length;
         }
       }
 
@@ -438,6 +466,10 @@ searchInput?.addEventListener("input", function(e) {
     function processNextBatch() {
       if (index >= totalHadithsCount) {
         resultsCount.innerText = (resultCount || "") + "";
+        if (resultsToCache.length < 20000) {
+          prevResults[query] = resultsToCache;
+        }
+
         return;
       }
 
@@ -452,7 +484,10 @@ searchInput?.addEventListener("input", function(e) {
 });
 
 searchResults?.addEventListener("click", function(e) {
-  const target = e.target as HTMLLIElement;
+  let target = e.target as HTMLLIElement;
+  if (target.parentElement?.classList.contains("result-item")) {
+    target = target.parentElement as HTMLLIElement;
+  }
   if (!target.dataset) return;
   const targetIndex = target.dataset.index;
   const targetBook = target.dataset.book;
@@ -519,6 +554,7 @@ localStorage.setItem(
 // Load all books when the browser is idle >:)
 requestIdleCallback(() => {
   for (const book of booksData) {
+    if (hadithBooks[book.book]?.length > 0) continue;
     getHadithDatafromAPI(book)
       .then((response) => {
         hadithBooks[book.book] = response;
