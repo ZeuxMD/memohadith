@@ -9,7 +9,7 @@ function debugLog(...args) {
 	}
 }
 
-const CACHE_NAME = "my-pwa-cache-v3.3";
+const CACHE_NAME = "my-pwa-cache-v4";
 const DB_VERSION = 3;
 const DB_NAME = "my-database";
 const OBJECT_STORE_NAME = "api-data";
