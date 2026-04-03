@@ -1,3 +1,45 @@
+:root {
+    --bg-color: #f7faf8;
+    --text-color: #1a231b;
+    --accent-color: #4CAF50;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --card-shadow: 0 10px 30px rgba(76, 175, 80, 0.15);
+    --card-border: 1px solid rgba(76, 175, 80, 0.2);
+    --button-bg: #e2f1e5;
+    --button-text: #1a231b;
+    --button-hover: #cbe6d1;
+    --list-bg: #f7faf8;
+    --list-item-hover: #e2f1e5;
+    --search-ui-bg: rgba(255, 255, 255, 0.95);
+    --search-input-bg: #ffffff;
+    --glass-border: rgba(76, 175, 80, 0.3);
+    --overlay-color: rgba(255, 255, 255, 0.1);
+    --switch-bg: #ccc;
+    --switch-active: #4CAF50;
+    --background-image: none;
+}
+
+[data-theme="dark"] {
+    --bg-color: #121212;
+    --text-color: #fdfbf7;
+    --accent-color: #d4af37;
+    --card-bg: rgba(30, 30, 30, 0.85);
+    --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    --card-border: 1px solid rgba(212, 175, 55, 0.3);
+    --button-bg: rgba(212, 175, 55, 0.15);
+    --button-text: #d4af37;
+    --button-hover: rgba(212, 175, 55, 0.3);
+    --list-bg: #1a1a1a;
+    --list-item-hover: #333333;
+    --search-ui-bg: rgba(18, 18, 18, 0.95);
+    --search-input-bg: #000000;
+    --glass-border: rgba(212, 175, 55, 0.3);
+    --overlay-color: rgba(0, 0, 0, 0.8);
+    --switch-bg: #555;
+    --switch-active: #d4af37;
+    --background-image: none;
+}
+
 body {
     font-family: "Amiri", serif;
     display: flex;
@@ -6,15 +48,16 @@ body {
     justify-content: center;
     height: 100svh;
     height: 100vh;
-    background: url(../images/mosque.webp) no-repeat scroll center top transparent;
+    background: var(--background-image);
     background-size: auto 100%;
-    background-color: black;
-    color: white;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     font-size: 1.5rem;
     line-height: 1.6;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-body>* {
+body > * {
     z-index: 1;
 }
 
@@ -30,20 +73,46 @@ main {
 .overlay {
     position: absolute;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: var(--overlay-color);
     height: 100svh;
     height: 100vh;
     pointer-events: none;
-    mix-blend-mode: multiply;
+}
+
+/* Header Elements for toggle button */
+.header-elements {
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-sizing: border-box;
+    z-index: 10;
 }
 
 .title {
-    position: absolute;
-    top: 20px;
-    left: 30px;
     font-size: 1.7rem;
     margin: 0;
 }
+
+.theme-btn {
+    background: transparent;
+    color: var(--text-color);
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+
+.theme-btn:hover { background: var(--button-hover); }
+.theme-btn svg { width: 24px; height: 24px; }
 
 .hadith-container {
     margin-top: 50px;
@@ -51,9 +120,14 @@ main {
     min-height: 200px;
     padding-left: 5px;
     overflow-y: scroll;
-    border-radius: 10px;
-    background-color: #00000070;
-    box-shadow: 0px 10px 50px 20px rgba(0, 0, 0, 0.6);
+    padding: 20px;
+    border-radius: 12px;
+    background-color: var(--card-bg);
+    box-shadow: var(--card-shadow);
+    border: var(--card-border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: background-color 0.3s, box-shadow 0.3s, border 0.3s;
 }
 
 #hadith {
@@ -63,9 +137,9 @@ main {
 }
 
 .list {
-    --list-width: 220px;
+    --list-width: 260px;
     position: fixed;
-    right: -300px;
+    right: -320px;
     top: 0;
     width: var(--list-width);
     height: 100vh;
@@ -73,27 +147,26 @@ main {
     padding-left: 10px;
     padding-right: 5px;
     padding-bottom: 10px;
-    transition: 0.1s linear;
+    transition: 0.3s ease-in-out;
     z-index: 1000;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border: 1px blue;
-    background: #00549d;
+    border-left: var(--card-border);
+    background: var(--list-bg);
+    box-shadow: var(--card-shadow);
 }
 
-.list-btn {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-}
+
 
 .search-ui {
     position: absolute;
     width: 100%;
     height: 100vh;
-    background-color: rgba(0, 0, 20, 0.95);
+    background-color: var(--search-ui-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     z-index: 1001;
     display: flex;
     flex-direction: column;
@@ -107,22 +180,26 @@ main {
     max-width: 500px;
     width: 80%;
     margin-top: 50px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
 }
 
 .search-scope-toggle {
-    background: #222444;
+    background: var(--button-bg);
+    color: var(--button-text);
     border: none;
     padding: 0 15px;
     display: flex;
     align-items: center;
     gap: 8px;
-    border-right: 1px solid #000;
+    border-right: var(--card-border);
     transition: 0.2s;
     border-radius: 0;
 }
 
 .search-scope-toggle:hover {
-    background: #2a2c52;
+    background: var(--button-hover);
 }
 
 .search-scope-toggle .scope-text {
@@ -131,12 +208,12 @@ main {
 
 .search-ui input {
     flex-grow: 1;
-    background-color: #222444;
+    background-color: var(--search-input-bg);
     height: 15px;
-    padding: 15px;
+    padding: 20px;
     outline: none;
     border: none;
-    color: #fff;
+    color: var(--text-color);
     font-size: 18px;
 }
 
@@ -156,7 +233,7 @@ main {
     font-size: 20px;
 }
 
-.result-count>span {
+.result-count > span {
     font-size: 19px;
 }
 
@@ -164,8 +241,9 @@ main {
     visibility: hidden;
 }
 
-.result-item>span.highlight {
-    color: red;
+.result-item > span.highlight {
+    color: var(--accent-color);
+    font-weight: bold;
 }
 
 #scrollAreaResults {
@@ -173,8 +251,8 @@ main {
     max-height: 600px;
     height: max-content;
     margin-bottom: 20px;
-    border-radius: 5px;
-    border: 1px #333 solid;
+    border-radius: 8px;
+    border: var(--card-border);
     padding: 10px 0;
     font-size: 20px;
     overflow-y: auto;
@@ -184,14 +262,16 @@ main {
     align-items: center;
 }
 
-/* TODO: improve on this later*/
 .close-search {
     position: absolute;
     right: 25px;
     top: 20px;
     font-size: 60px;
     padding: 0 20px;
+    color: var(--text-color);
     background: none;
+    border: none;
+    cursor: pointer;
 }
 
 .mobile.close-search {
@@ -206,7 +286,7 @@ main {
     width: 90%;
 }
 
-.search-results>li {
+.search-results > li {
     height: 95px;
     overflow: hidden;
     flex-shrink: 0;
@@ -216,28 +296,29 @@ main {
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
     line-clamp: 3;
-    border-bottom: 1px #333 solid;
+    border-bottom: 1px solid rgba(128,128,128,0.1);
     text-align: center;
     padding-bottom: 13px;
     cursor: pointer;
     transition: 0.2s;
+    border-radius: 6px;
 }
 
-.search-results>li:hover {
-    border-radius: 5px;
-    background-color: #44444490;
+.search-results > li:hover {
+    background-color: var(--button-bg);
     border-bottom: 1px transparent solid;
 }
 
-.search-results>li:last-child {
+.search-results > li:last-child {
     border-bottom: 0;
 }
 
 #search-btn {
     width: calc(var(--list-width) - 20px);
     height: 30px;
-    border-radius: 5px;
-    background-color: #00649d;
+    border-radius: 6px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
     margin-bottom: 20px;
     padding: 8px 10px 5px;
     display: flex;
@@ -246,6 +327,7 @@ main {
     align-items: center;
     -webkit-tap-highlight-color: transparent;
     font-size: 24px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 #search-btn svg {
@@ -260,7 +342,6 @@ ul {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    border: 1px;
 }
 
 #scrollArea {
@@ -268,7 +349,7 @@ ul {
     margin-block: 20px;
     max-height: 500px;
     height: max-content;
-    background: #00649d;
+    background: transparent;
     border-radius: 7px;
     padding-inline: 5px;
     overflow-y: auto;
@@ -280,11 +361,14 @@ ul {
 
 .list-item {
     cursor: pointer;
-    border-radius: 3px;
+    border-radius: 6px;
+    padding: 4px;
+    transition: 0.2s;
 }
 
 .list-item:hover {
-    color: darkblue;
+    color: var(--accent-color);
+    background: var(--list-item-hover);
 }
 
 #pwa-install {
@@ -295,13 +379,16 @@ ul {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background-color: #1e3c72;
-    border-radius: 5px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    background-color: var(--card-bg);
+    border: var(--card-border);
+    border-radius: 12px;
+    box-shadow: var(--card-shadow);
+    backdrop-filter: blur(10px);
     position: fixed;
     bottom: 40px;
     right: 20px;
-    color: white;
+    color: var(--text-color);
+    z-index: 9999;
 }
 
 #pwa-install button {
@@ -309,22 +396,22 @@ ul {
     padding: 8px 16px;
     margin: 0 5px;
     border: none;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
 }
 
 #accept-pwa {
-    background-color: white;
-    color: #1e3c72;
+    background-color: var(--accent-color);
+    color: #fff;
 }
 
 #deny-pwa {
     background-color: transparent;
-    color: white;
-    border: 1px solid white !important;
+    color: var(--text-color);
+    border: 1px solid var(--border-color) !important;
 }
 
-#pwa-install>* {
+#pwa-install > * {
     margin: 0;
 }
 
@@ -355,7 +442,7 @@ ul {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
+    background-color: var(--switch-bg);
     -webkit-transition: .2s;
     transition: .2s;
 }
@@ -372,15 +459,15 @@ ul {
     transition: .2s;
 }
 
-input:checked+.slider {
-    background-color: #2196F3;
+input:checked + .slider {
+    background-color: var(--switch-active);
 }
 
-input:focus+.slider {
-    box-shadow: 0 0 1px #2196F3;
+input:focus + .slider {
+    box-shadow: 0 0 1px var(--switch-active);
 }
 
-input:checked+.slider:before {
+input:checked + .slider:before {
     -webkit-transform: translateX(16px);
     -ms-transform: translateX(16px);
     transform: translateX(16px);
@@ -407,40 +494,48 @@ input:checked+.slider:before {
 
 button {
     padding: 13px;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    background-color: #00548f90;
+    color: var(--button-text);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background-color: var(--button-bg);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    transition: 0.3s;
+    font-family: inherit;
+    font-size: 1.1rem;
+}
+
+button:hover {
+    background-color: var(--button-hover);
 }
 
 select.book-options {
-    background-color: #00649d;
-    color: white;
-    width: 220px;
-    padding: 2px;
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    width: calc(var(--list-width) - 20px);
+    padding: 8px;
     border-radius: 6px;
-    border: 1px;
+    border: var(--card-border);
+    font-family: inherit;
+    font-size: 1.1rem;
 }
 
 select.book-options:focus {
-    border: none;
     outline: none;
+    border-color: var(--accent-color);
 }
 
 /* Media Quiries */
 
 @media screen and (max-width: 600px) {
-
-    .search-ui>.close-search {
+    .search-ui > .close-search {
         display: none;
     }
 
     .search-input {
         justify-content: center;
         align-items: center;
-        background-color: #222444;
+        background-color: var(--button-bg);
         max-width: unset;
         width: 85%;
     }
@@ -475,30 +570,22 @@ select.book-options:focus {
 
 ::-webkit-scrollbar {
     width: 10px;
-    /* Adjust the width to create space for padding */
     height: 10px;
-    /* Adjust the height to create space for padding */
 }
 
 ::-webkit-scrollbar-track {
     background: transparent;
-    /* Ensure the track is transparent */
     border-radius: 10px;
-    /* Match the border-radius of the thumb */
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #66666690;
-    /* You can adjust this color for the thumb */
+    background: rgba(128,128,128,0.3);
     border-radius: 9999px;
-    /* Match the border-radius of the thumb */
     background-clip: content-box;
-    /* Ensure the thumb doesn't overlap the track */
     border: 2px solid transparent;
-    /* Ensure the thumb doesn't overlap the track */
     box-shadow: 0 0 0 2px transparent;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #666666;
+    background: rgba(128,128,128,0.5);
 }
