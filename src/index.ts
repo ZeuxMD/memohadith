@@ -312,8 +312,10 @@ list?.addEventListener("click", function(e) {
   }
 });
 
-toggleTashkilBtn?.addEventListener("change", function() {
-  tashkilOn = !tashkilOn;
+toggleTashkilBtn?.addEventListener("change", function(e) {
+  const checkbox = e?.target as HTMLInputElement;
+  const isChecked = checkbox.checked;
+  tashkilOn = isChecked;
   displayHadith();
 });
 

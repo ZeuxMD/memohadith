@@ -265,8 +265,10 @@ list?.addEventListener("click", function (e) {
         list?.classList.remove("active");
     }
 });
-toggleTashkilBtn?.addEventListener("change", function () {
-    tashkilOn = !tashkilOn;
+toggleTashkilBtn?.addEventListener("change", function (e) {
+    const checkbox = e?.target;
+    const isChecked = checkbox.checked;
+    tashkilOn = isChecked;
     displayHadith();
 });
 themeToggleBtn?.addEventListener("click", () => {
