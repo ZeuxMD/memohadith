@@ -346,7 +346,7 @@ searchInput?.addEventListener("input", function (e) {
     }
     const numberQuery = parseInt(query);
     if (numberQuery && hadithBooks[currentBook][numberQuery]) {
-        resultsCount.innerText = 1 + "";
+        resultsCount.innerText = String(1);
         const resultItem = document.createElement("li");
         resultItem.className = "result-item";
         resultItem.dataset.book = currentBook;
@@ -403,8 +403,12 @@ searchInput?.addEventListener("input", function (e) {
                 if (searchResult) {
                     resultsFound++;
                     resultCount++;
-                    const result = searchingInCache ? searchResult :
-                        `<li class="result-item" data-book="${booksToSearch[currentBookIndex]}" data-index="${indexInBook}">${isGlobalSearch ? "" : index + 1 + "-"} ${searchResult}</li>`;
+                    const resultItem = document.createElement("li");
+                    resultItem.className = "result-item";
+                    resultItem.dataset.book = booksToSearch[currentBookIndex];
+                    resultItem.dataset.index = String(indexInBook);
+                    resultItem.textContent = `${isGlobalSearch ? "" : index + 1 + "-"} ${searchResult}`;
+                    const result = searchingInCache ? searchResult : resultItem.outerHTML;
                     newRows.push(result);
                     resultsToCache.push(result);
                 }
