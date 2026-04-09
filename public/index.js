@@ -345,13 +345,14 @@ searchInput?.addEventListener("input", function (e) {
         return;
     }
     const numberQuery = parseInt(query);
-    if (numberQuery && hadithBooks[currentBook][numberQuery]) {
+    const zeroIndexedQuery = numberQuery - 1;
+    if (numberQuery && hadithBooks[currentBook][zeroIndexedQuery]) {
         resultsCount.innerText = String(1);
         const resultItem = document.createElement("li");
         resultItem.className = "result-item";
         resultItem.dataset.book = currentBook;
-        resultItem.dataset.index = String(numberQuery - 1);
-        resultItem.textContent = `${numberQuery}- ${removeTashkeel(hadithBooks[currentBook][numberQuery])}`;
+        resultItem.dataset.index = String(zeroIndexedQuery);
+        resultItem.textContent = `${numberQuery}- ${removeTashkeel(hadithBooks[currentBook][zeroIndexedQuery])}`;
         clusterizeResults.update([
             resultItem.outerHTML
         ]);
@@ -376,14 +377,22 @@ searchInput?.addEventListener("input", function (e) {
         let currentBookLength = hadithsToSearch.length;
         const totalHadithsCount = searchingInCache ? currentBookLength : Object.values(booksToSearch).reduce((sum, book) => sum + hadithBooks[book].length, 0);
         const resultsToCache = [];
-        function searchInString(string, query) {
-            for (let i = searchingInCache ? string.indexOf(">") : 0; i < string.length && i + query.length <= string.length; i++) {
-                const curSubString = string.substring(i, i + query.length);
-                if (curSubString === query) {
-                    return `${searchingInCache ? string.slice(0, i) : string.slice(0, i).split(" ").slice(-4).join(" ")}<span class="highlight">${curSubString}</span>${string.slice(i + query.length)}`;
-                }
-            }
-            return "";
+        function escapeHtml(text) {
+            return text
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
+        }
+        function searchInStringAndHighlight(text, query) {
+            const index = text.indexOf(query);
+            if (index === -1)
+                return "";
+            const before = escapeHtml(text.slice(0, index));
+            const match = escapeHtml(text.slice(index, index + query.length));
+            const after = escapeHtml(text.slice(index + query.length));
+            return `${before}<span class="highlight">${match}</span>${after}`;
         }
         function removeHighlightSpan(string) {
             return string.replace('<span class="highlight">', '').replace('</span>', '');
@@ -399,16 +408,13 @@ searchInput?.addEventListener("input", function (e) {
                     continue;
                 }
                 const searchableHadith = searchingInCache ? removeHighlightSpan(hadith) : removeTashkeelAndHamza(hadith);
-                const searchResult = searchInString(searchableHadith, query);
+                const searchResult = searchInStringAndHighlight(searchableHadith, query);
                 if (searchResult) {
                     resultsFound++;
                     resultCount++;
-                    const resultItem = document.createElement("li");
-                    resultItem.className = "result-item";
-                    resultItem.dataset.book = booksToSearch[currentBookIndex];
-                    resultItem.dataset.index = String(indexInBook);
-                    resultItem.textContent = `${isGlobalSearch ? "" : index + 1 + "-"} ${searchResult}`;
-                    const result = searchingInCache ? searchResult : resultItem.outerHTML;
+                    const result = searchingInCache ?
+                        searchResult :
+                        `<li class="result-item" data-book="${booksToSearch[currentBookIndex]}" data-index="${indexInBook}">${isGlobalSearch ? "" : index + 1 + "-"} ${searchResult}</li>`;
                     newRows.push(result);
                     resultsToCache.push(result);
                 }
