@@ -21,6 +21,9 @@ const resultsCount = document.querySelector(
   ".result-count>span"
 ) as HTMLSpanElement;
 const toggleTashkilBtn = document.getElementById("toggleTashkil");
+const themeToggleBtn = document.getElementById("theme-toggle");
+const moonIcon = document.querySelector(".moon-icon");
+const sunIcon = document.querySelector(".sun-icon");
 
 let userData = JSON.parse(localStorage.getItem("userData") ?? "{}");
 
@@ -51,6 +54,20 @@ visits = (userData?.visits ?? 0) + 1;
 currentHadith = userData?.currentHadith ?? 0;
 currentBook = userData?.currentBook ?? "nawawi40";
 tashkilOn = userData?.tashkilOn ?? true;
+let theme = userData?.theme ?? "light";
+updateThemeIcons();
+
+function updateThemeIcons() {
+  if (theme === "dark") {
+    document.documentElement.setAttribute("data-theme", "dark");
+    if (moonIcon) moonIcon.classList.add("hidden");
+    if (sunIcon) sunIcon.classList.remove("hidden");
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+    if (sunIcon) sunIcon.classList.add("hidden");
+    if (moonIcon) moonIcon.classList.remove("hidden");
+  }
+}
 selectBook(currentBook);
 
 await updateHadiths(currentBook);
@@ -169,6 +186,7 @@ function displayHadith() {
       currentHadith: currentHadith,
       currentBook: currentBook,
       tashkilOn: tashkilOn,
+      theme: theme,
     })
   );
 }
@@ -292,6 +310,18 @@ list?.addEventListener("click", function(e) {
 toggleTashkilBtn?.addEventListener("change", function() {
   tashkilOn = !tashkilOn;
   displayHadith();
+});
+
+themeToggleBtn?.addEventListener("click", () => {
+  theme = theme === "light" ? "dark" : "light";
+  updateThemeIcons();
+  localStorage.setItem("userData", JSON.stringify({
+    ...userData,
+    currentHadith: currentHadith,
+    currentBook: currentBook,
+    tashkilOn: tashkilOn,
+    theme: theme,
+  }));
 });
 
 bookOptions?.addEventListener("change", async function(e) {
@@ -548,6 +578,7 @@ localStorage.setItem(
     currentBook: currentBook,
     tashkilOn: tashkilOn,
     visits: visits,
+    theme: theme,
   })
 );
 

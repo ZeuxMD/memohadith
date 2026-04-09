@@ -47,16 +47,20 @@ currentBook = userData?.currentBook ?? "nawawi40";
 tashkilOn = userData?.tashkilOn ?? true;
 let theme = userData?.theme ?? "light";
 updateThemeIcons();
-
 function updateThemeIcons() {
     if (theme === "dark") {
         document.documentElement.setAttribute("data-theme", "dark");
-        if(moonIcon) moonIcon.classList.add("hidden");
-        if(sunIcon) sunIcon.classList.remove("hidden");
-    } else {
+        if (moonIcon)
+            moonIcon.classList.add("hidden");
+        if (sunIcon)
+            sunIcon.classList.remove("hidden");
+    }
+    else {
         document.documentElement.removeAttribute("data-theme");
-        if(sunIcon) sunIcon.classList.add("hidden");
-        if(moonIcon) moonIcon.classList.remove("hidden");
+        if (sunIcon)
+            sunIcon.classList.add("hidden");
+        if (moonIcon)
+            moonIcon.classList.remove("hidden");
     }
 }
 selectBook(currentBook);
@@ -261,7 +265,6 @@ toggleTashkilBtn?.addEventListener("change", function () {
     tashkilOn = !tashkilOn;
     displayHadith();
 });
-
 themeToggleBtn?.addEventListener("click", () => {
     theme = theme === "light" ? "dark" : "light";
     updateThemeIcons();
