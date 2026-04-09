@@ -162,8 +162,13 @@ function createHadithTitles(chunkIndex: number, chunkSize: number) {
         .splice(0, 4)
         .join(" ")
     );
+    const listItem = document.createElement("li")
+    listItem.className = "list-item"
+    listItem.dataset.index = String(i)
+    listItem.textContent = `${i + 1}. ${title}..`
+
     newRows.push(
-      `<li class="list-item" data-index="${i}">${i + 1}. ${title}..</li>`
+      listItem.outerHTML
     );
   }
   return newRows;
@@ -409,9 +414,15 @@ searchInput?.addEventListener("input", function(e) {
   const numberQuery = parseInt(query);
   if (numberQuery && hadithBooks[currentBook][numberQuery]) {
     resultsCount.innerText = 1 + "";
+
+    const resultItem = document.createElement("li")
+    resultItem.className = "result-item"
+    resultItem.dataset.book = currentBook
+    resultItem.dataset.index = String(numberQuery - 1)
+    resultItem.textContent = `${numberQuery}- ${removeTashkeel(hadithBooks[currentBook][numberQuery])}`
+
     clusterizeResults.update([
-      `<li class="result-item" data-book="${currentBook}" data-index="${numberQuery - 1
-      }">${numberQuery}- ${removeTashkeel(hadithBooks[currentBook][numberQuery])}</li>`,
+      resultItem.outerHTML
     ]);
     return;
   }
