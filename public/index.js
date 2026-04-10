@@ -393,13 +393,13 @@ searchInput?.addEventListener("input", function (e) {
                 .replaceAll('"', "&quot;")
                 .replaceAll("'", "&#39;");
         }
-        function searchInStringAndHighlight(text, query) {
+        function searchInStringAndHighlight(text, query, transformFn) {
             const index = text.indexOf(query);
             if (index === -1)
                 return "";
-            const before = escapeHtml(text.slice(0, index));
-            const match = escapeHtml(text.slice(index, index + query.length));
-            const after = escapeHtml(text.slice(index + query.length));
+            const before = transformFn(text.slice(0, index));
+            const match = transformFn(text.slice(index, index + query.length));
+            const after = transformFn(text.slice(index + query.length));
             return `${before}<span class="highlight">${match}</span>${after}`;
         }
         function removeHighlightSpan(string) {
@@ -416,8 +416,9 @@ searchInput?.addEventListener("input", function (e) {
                     continue;
                 }
                 const searchableHadith = searchingInCache ? removeHighlightSpan(hadith) : removeTashkeelAndHamza(hadith);
-                console.log(searchableHadith);
-                const searchResult = searchInStringAndHighlight(searchableHadith, query);
+                // escape html only if we are not searching in chached results
+                const transformFn = searchingInCache ? (s) => s : escapeHtml;
+                const searchResult = searchInStringAndHighlight(searchableHadith, query, transformFn);
                 if (searchResult) {
                     resultsFound++;
                     resultCount++;

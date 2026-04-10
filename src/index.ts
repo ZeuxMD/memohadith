@@ -384,6 +384,12 @@ searchBtn?.addEventListener("click", function(e) {
   list?.classList.remove("active");
   searchInput?.focus();
   document.addEventListener("click", handleCloseSearch);
+
+  // trigger the search immediately if the search input field has a value
+  if (searchInput?.value.trim()) {
+    // Trigger the search again
+    searchInput.dispatchEvent(new Event("input"));
+  }
 });
 // TODO: save isGlobalSearch as prefrence in localStorage
 
@@ -410,7 +416,7 @@ searchInput?.addEventListener("input", function(e) {
 
   if (prevResults[query]) {
     clusterizeResults.update([...prevResults[query]])
-    resultsCount.innerText = prevResults[query].length + "";
+    resultsCount.innerText = String(prevResults[query].length);
     return;
   }
 
@@ -448,7 +454,7 @@ searchInput?.addEventListener("input", function(e) {
       prevQuery = prevQuery.slice(0, -1);
     }
     let searchingInCache = prevResults[prevQuery];
-    let hadithsToSearch = searchingInCache ? prevResults[prevQuery] : hadithBooks[booksToSearch[currentBookIndex]];
+    let hadithsToSearch = prevResults[prevQuery] ?? hadithBooks[booksToSearch[currentBookIndex]];
     let currentBookLength = hadithsToSearch.length;
     const totalHadithsCount = searchingInCache ? currentBookLength : Object.values(booksToSearch).reduce(
       (sum, book) => sum + hadithBooks[book].length,
@@ -465,14 +471,14 @@ searchInput?.addEventListener("input", function(e) {
         .replaceAll("'", "&#39;");
     }
 
-    function searchInStringAndHighlight(text: string, query: string) {
+    function searchInStringAndHighlight(text: string, query: string, transformFn: (s: string) => string) {
       const index = text.indexOf(query);
       if (index === -1) return "";
 
 
-      const before = escapeHtml(text.slice(0, index));
-      const match = escapeHtml(text.slice(index, index + query.length));
-      const after = escapeHtml(text.slice(index + query.length));
+      const before = transformFn(text.slice(0, index));
+      const match = transformFn(text.slice(index, index + query.length));
+      const after = transformFn(text.slice(index + query.length));
 
       return `${before}<span class="highlight">${match}</span>${after}`;
     }
@@ -493,15 +499,18 @@ searchInput?.addEventListener("input", function(e) {
           continue;
         }
         const searchableHadith = searchingInCache ? removeHighlightSpan(hadith) : removeTashkeelAndHamza(hadith);
-        const searchResult = searchInStringAndHighlight(searchableHadith, query);
+
+        // escape html only if we are not searching in chached results
+        const transformFn = searchingInCache ? (s: string) => s : escapeHtml;
+        const searchResult = searchInStringAndHighlight(searchableHadith, query, transformFn);
         if (searchResult) {
           resultsFound++;
           resultCount++;
 
+          const localNumber = isGlobalSearch ? "" : index + 1 + "-"
           const result = searchingInCache ?
             searchResult :
-            `<li class="result-item" data-book="${booksToSearch[currentBookIndex]}" data-index="${indexInBook}">${isGlobalSearch ? "" : index + 1 + "-"
-            } ${searchResult}</li>`;
+            `<li class="result-item" data-book="${booksToSearch[currentBookIndex]}" data-index="${indexInBook}">${localNumber} ${searchResult}</li>`;
 
           newRows.push(result);
           resultsToCache.push(result);
@@ -612,13 +621,13 @@ localStorage.setItem(
 
 // Load all books when the browser is idle >:)
 requestIdleCallback(() => {
-  for (const book of booksData) {
-    if (hadithBooks[book.book]?.length > 0) continue;
-    getHadithDatafromAPI(book)
+  for (const bookData of booksData) {
+    if (hadithBooks[bookData.book]?.length > 0) continue;
+    getHadithDatafromAPI(bookData)
       .then((response) => {
-        hadithBooks[book.book] = response;
+        hadithBooks[bookData.book] = response;
       })
-      .catch((error) => console.log("error: ", error));
+      .catch((error) => console.error("error: ", error));
   }
 });
 
