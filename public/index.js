@@ -94,7 +94,6 @@ async function getDatafromAPI(url) {
 }
 async function getHadithDatafromAPI(bookData) {
     return getDatafromAPI(bookData.link).then((hadithData) => {
-        console.log(hadithData);
         // handle fetching before service worker is installed (i'll make it look better later.. i think) => I ACTUALLY DID! AHAHAHAHAHAHA
         return hadithData?.chapters?.flatMap(({ hadiths }) => hadiths) ?? hadithData;
     });
@@ -383,22 +382,14 @@ searchInput?.addEventListener("input", function (e) {
         let currentBookLength = hadithsToSearch.length;
         const totalHadithsCount = searchingInCache ? currentBookLength : Object.values(booksToSearch).reduce((sum, book) => sum + hadithBooks[book].length, 0);
         const resultsToCache = [];
-        function escapeHtml(text) {
-            return text
-                .replaceAll("&", "&amp;")
-                .replaceAll("<", "&lt;")
-                .replaceAll(">", "&gt;")
-                .replaceAll('"', "&quot;")
-                .replaceAll("'", "&#39;");
-        }
-        function searchInStringAndHighlight(text, query, transformFn) {
+        function searchInString(text, query) {
             const index = text.indexOf(query);
             if (index === -1)
                 return "";
-            const before = transformFn(text.slice(0, index));
-            const match = transformFn(text.slice(index, index + query.length));
-            const after = transformFn(text.slice(index + query.length));
-            return `${before}<span class="highlight">${match}</span>${after}`;
+            const before = text.slice(0, index);
+            const match = text.slice(index, index + query.length);
+            const after = text.slice(index + query.length);
+            return [before, match, after];
         }
         function removeHighlightSpan(string) {
             return string.replace('<span class="highlight">', '').replace('</span>', '');
@@ -415,15 +406,27 @@ searchInput?.addEventListener("input", function (e) {
                 }
                 const searchableHadith = searchingInCache ? removeHighlightSpan(hadith) : removeTashkeelAndHamza(hadith);
                 // escape html only if we are not searching in chached results
-                const transformFn = searchingInCache ? (s) => s : escapeHtml;
-                const searchResult = searchInStringAndHighlight(searchableHadith, query, transformFn);
+                const [before, match, after] = searchInString(searchableHadith, query);
+                const searchResult = before + match + after;
                 if (searchResult) {
                     resultsFound++;
                     resultCount++;
                     const localNumber = isGlobalSearch ? "" : index + 1 + "-";
+                    const resultItem = document.createElement("li");
+                    const highlighedText = document.createElement("span");
+                    highlighedText.className = "highlight";
+                    highlighedText.textContent = match;
+                    resultItem.className = "result-item";
+                    resultItem.dataset.book = booksToSearch[currentBookIndex];
+                    resultItem.dataset.index = String(indexInBook);
+                    // construct the result text
+                    resultItem.appendChild(document.createTextNode(localNumber));
+                    resultItem.appendChild(document.createTextNode(before));
+                    resultItem.appendChild(highlighedText);
+                    resultItem.appendChild(document.createTextNode(after));
                     const result = searchingInCache ?
                         searchResult :
-                        `<li class="result-item" data-book="${booksToSearch[currentBookIndex]}" data-index="${indexInBook}">${localNumber} ${searchResult}</li>`;
+                        resultItem.outerHTML;
                     newRows.push(result);
                     resultsToCache.push(result);
                 }
