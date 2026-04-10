@@ -20,7 +20,7 @@ const searchResults = searchUI?.querySelector(".search-results");
 const resultsCount = document.querySelector(
   ".result-count>span"
 ) as HTMLSpanElement;
-const toggleTashkilBtn = document.getElementById("toggleTashkil");
+const toggleTashkilBtn = document.getElementById("toggleTashkil") as HTMLInputElement;
 const themeToggleBtn = document.getElementById("theme-toggle");
 const moonIcon = document.querySelector(".moon-icon");
 const sunIcon = document.querySelector(".sun-icon");
@@ -176,6 +176,7 @@ function createHadithTitles(chunkIndex: number, chunkSize: number) {
 
 function displayHadith() {
   const hadiths = hadithBooks[currentBook];
+  tashkilOn = !toggleTashkilBtn.checked;
   const hadithToDisplay = tashkilOn
     ? hadiths[currentHadith]
     : removeTashkeel(hadiths[currentHadith]);
@@ -315,7 +316,7 @@ list?.addEventListener("click", function(e) {
 toggleTashkilBtn?.addEventListener("change", function(e) {
   const checkbox = e?.target as HTMLInputElement;
   const isChecked = checkbox.checked;
-  tashkilOn = isChecked;
+  tashkilOn = !isChecked;
   displayHadith();
 });
 
