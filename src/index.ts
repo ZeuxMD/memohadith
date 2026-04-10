@@ -101,19 +101,17 @@ async function getDatafromAPI(url: string) {
     })
     .catch((error) => {
       console.error("Error fetching data:", error);
+      return {};
     });
 }
 
 async function getHadithDatafromAPI(bookData: BookData): Promise<string[]> {
   return getDatafromAPI(bookData.link).then((hadithData) => {
-    // handle fetching before service worker is installed (i'll make it look better later.. i think)
-    let hadithsTemp;
-    if (hadithData.chapters) {
-      hadithsTemp = hadithData.chapters.flatMap(
-        (chapter: { hadiths: string[] }) => chapter.hadiths
-      );
-    }
-    return hadithsTemp ?? hadithData;
+    console.log(hadithData);
+    // handle fetching before service worker is installed (i'll make it look better later.. i think) => I ACTUALLY DID! AHAHAHAHAHAHA
+    return hadithData?.chapters?.flatMap(
+        ({hadiths}: { hadiths: string[] }) => hadiths
+      ) ?? hadithData;
   });
 }
 
@@ -176,7 +174,7 @@ function createHadithTitles(chunkIndex: number, chunkSize: number) {
 
 function displayHadith() {
   const hadiths = hadithBooks[currentBook];
-  tashkilOn = toggleTashkilBtn.checked;
+  toggleTashkilBtn.checked = tashkilOn;
   const hadithToDisplay = tashkilOn
     ? hadiths[currentHadith]
     : removeTashkeel(hadiths[currentHadith]);
