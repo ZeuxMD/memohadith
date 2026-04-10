@@ -151,7 +151,7 @@ function createHadithTitles(chunkIndex, chunkSize) {
 }
 function displayHadith() {
     const hadiths = hadithBooks[currentBook];
-    tashkilOn = !toggleTashkilBtn.checked;
+    tashkilOn = toggleTashkilBtn.checked;
     const hadithToDisplay = tashkilOn
         ? hadiths[currentHadith]
         : removeTashkeel(hadiths[currentHadith]);
@@ -269,7 +269,7 @@ list?.addEventListener("click", function (e) {
 toggleTashkilBtn?.addEventListener("change", function (e) {
     const checkbox = e?.target;
     const isChecked = checkbox.checked;
-    tashkilOn = !isChecked;
+    tashkilOn = isChecked;
     displayHadith();
 });
 themeToggleBtn?.addEventListener("click", () => {
