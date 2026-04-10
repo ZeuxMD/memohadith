@@ -249,7 +249,7 @@ main {
 
 #scrollAreaResults {
     width: 100%;
-    max-height: 600px;
+    max-height: 60vh;
     height: max-content;
     margin-bottom: 20px;
     border-radius: 8px;

@@ -416,6 +416,7 @@ searchInput?.addEventListener("input", function (e) {
                     continue;
                 }
                 const searchableHadith = searchingInCache ? removeHighlightSpan(hadith) : removeTashkeelAndHamza(hadith);
+                console.log(searchableHadith);
                 const searchResult = searchInStringAndHighlight(searchableHadith, query);
                 if (searchResult) {
                     resultsFound++;
