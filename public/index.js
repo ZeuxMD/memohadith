@@ -89,7 +89,6 @@ async function getDatafromAPI(url) {
     })
         .catch((error) => {
         console.error("Error fetching data:", error);
-        return {};
     });
 }
 async function getHadithDatafromAPI(bookData) {

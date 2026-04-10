@@ -101,7 +101,6 @@ async function getDatafromAPI(url: string) {
     })
     .catch((error) => {
       console.error("Error fetching data:", error);
-      return {};
     });
 }
 
